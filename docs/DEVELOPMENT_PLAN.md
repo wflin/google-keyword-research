@@ -1,99 +1,181 @@
 # 开发计划
 
-## Phase 0：账号与 API 能力验证
+## 总原则
 
-目标：先确认 Google Ads API 可以被真实调用。
+本项目采用 Python 3.12+ + FastAPI + Next.js + PostgreSQL 的模块化单体架构。
+
+Google Ads / Keyword Planner 不属于本项目依赖，不进入任何 Phase 的验收条件。
+
+Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试并更新文档，不得擅自扩大范围。
+
+## Phase 0：工程骨架
+
+目标：前后端、数据库、Docker、CI 均能启动。
 
 任务：
 
-1. 准备 Google Ads / Google Cloud 环境
-2. 获取所需 OAuth credentials
-3. 获取 Developer Token / 对应 access level
-4. 配置 customer ID
-5. 完成一个 historical metrics smoke test
-6. 验证 keyword ideas 能力
-7. 将真实 credentials 放入本地环境，不提交 Git
+1. 创建 `backend/` FastAPI 项目
+2. 创建 `frontend/` Next.js 项目
+3. Python 依赖与 lint/test 配置
+4. PostgreSQL + Alembic
+5. Docker Compose
+6. `.env.example` 与 Secret 管理规则
+7. `/health`、基础日志、request id
+8. GitHub Actions：lint + unit test + build
 
-验收：可以对一个关键词返回真实 Google historical metrics。
+验收：一条命令可以启动开发环境，前后端健康检查通过。
 
-## Phase 1：MVP
+## Phase 1：研究工作台 MVP
 
-目标：完成个人关键词研究工作台。
+目标：用户可以创建研究项目并查看完整的基础 UI。
 
-### 后端
+任务：
 
-- Spring Boot 项目初始化
-- 配置 MySQL
-- Google Ads gateway
-- Keyword historical metrics service
-- Keyword ideas service
-- 缓存
-- REST API
-- 参数校验
-- 错误处理
-- 单元测试
-
-### 前端
-
-- Vue 项目初始化
-- 关键词输入
+- Research CRUD
+- Seed keyword 输入
 - 国家/语言选择
-- 查询按钮
-- 结果表格
-- 趋势图
-- 筛选/排序
-- 研究记录
+- 研究状态
+- 关键词列表
+- 基础筛选/排序
+- Mock Provider
+- 基础 API
+- 数据库迁移
 
-### DevOps
+验收：不依赖任何第三方 API，也可以创建研究并展示 Mock 数据。
 
-- Dockerfile
-- docker-compose
-- `.env.example`
-- README 本地启动说明
+## Phase 2：关键词扩展 + 搜索需求
 
-## Phase 2：研究效率增强
+目标：形成第一条真实数据闭环。
 
-- CSV 导入
+任务：
+
+- Keyword Expansion Provider
+- Search Volume Provider
+- 关键词标准化、去重
+- estimated monthly searches
+- CPC / competition（Provider 支持时）
+- 历史数据
+- Provider 缓存
+- 数据来源标识
+
+验收：输入 `invoice` 可以得到真实关键词数据，并明确标注 estimated/source。
+
+## Phase 3：趋势 + SERP + 社区
+
+目标：从“关键词工具”升级为“需求研究工具”。
+
+任务：
+
+- Trend Provider
+- SERP Provider
+- Community Provider
+- 弱竞争 SERP 分析
+- 用户痛点提取
+- 统一数据模型
+- 任务进度 UI
+
+验收：一次 Research 可以生成多源研究数据。
+
+## Phase 4：竞品 + Opportunity Score
+
+目标：判断一个需求是否值得做。
+
+任务：
+
+- Competitor Provider
+- 产品/网站信息
+- 定价信息
+- Search Demand Score
+- Trend Score
+- Commercial Intent Score
+- Competition Score
+- Pain Point Score
+- Monetization Score
+- MVP Difficulty Score
+- Opportunity Score
+
+验收：每个候选机会可以解释分数来源。
+
+## Phase 5：AI 产品机会报告
+
+目标：从数据自动形成可执行的创业判断。
+
+任务：
+
+- AI Provider
+- 结构化 Prompt
+- Pydantic output schema
+- 用户画像
+- 痛点总结
+- 产品定位
+- MVP 功能
+- 定价建议
+- 风险
+- AI confidence / evidence
+- 报告页面
+
+验收：输入一个种子词，可以生成完整产品机会报告；报告中的事实与推断明确区分。
+
+## Phase 6：批量研究与每日发现
+
+目标：从手动研究升级为自动发现。
+
+任务：
+
+- 批量种子词
+- 批量 Research
+- 每日定时任务
+- Opportunity Ranking
+- Top N 推荐
+- 收藏/标签/备注
 - CSV 导出
-- 关键词批量管理
-- 研究项目管理
-- 标签
-- 备注
-- 收藏
-- 更好的趋势比较
 
-## Phase 3：AI 机会分析
+验收：系统可以自动运行一批种子词并生成每日机会列表。
 
-- 搜索意图分析
-- 商业意图分析
-- 用户画像推断
-- 产品方向建议
-- 收费模式建议
-- 机会评分
-- AI 研究报告
+## Phase 7：稳定性与部署
 
-## Phase 4：完整海外需求发现
+目标：可以长期运行。
 
-未来再考虑接入：
+任务：
 
-- 搜索结果/SERP 数据
-- 竞品网站信息
-- Reddit 等社区需求
-- Product Hunt 等产品信息
-- 网站流量/SEO 数据
-- 产品价格
-- AI 自动生成 MVP 需求
+- retry / timeout / rate limit
+- 失败任务恢复
+- 数据清理
+- provider 成本统计
+- API usage metrics
+- 日志与监控
+- Docker production profile
+- 云服务器部署
+- 数据库备份/恢复
 
-这些不属于 MVP，不提前开发。
+验收：连续运行 7 天，无未处理任务堆积；关键任务失败可恢复。
 
-## 开发规则
+## Phase 8：产品化（非 MVP）
 
-每个 Phase 完成后必须：
+仅在个人版本验证有效后考虑：
 
-1. 运行测试
-2. 检查日志
-3. 更新文档
-4. 更新 TODO
-5. 验证已有功能没有回归
+- 用户系统
+- 多租户
+- RBAC
+- 配额
+- 订阅计费
+- 团队协作
+- 更丰富的数据源
 
-Codex 不应跨 Phase 擅自扩大范围。
+## 每个 Phase 的 Definition of Done
+
+1. 功能完成
+2. Unit tests 通过
+3. 必要 Integration/E2E tests 通过
+4. Lint/type checks 通过
+5. Docker 环境验证
+6. 文档同步
+7. TODO 更新
+8. Git commit 清晰
+
+禁止：
+
+- 把第三方真实数据用随机数伪造
+- 将 Secret 提交 Git
+- 在 Controller 直接调用 Provider
+- 未测试就进入下一阶段
