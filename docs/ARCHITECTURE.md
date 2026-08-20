@@ -1,192 +1,299 @@
 # 系统架构设计
 
-## 1. 总体架构
+## 1. 产品定位
 
-第一版采用单体 Web 应用，避免过早微服务化。
+本系统是一个 Web 应用，核心目标是通过多数据源和 AI 帮助个人发现海外产品机会。系统不依赖 Google Ads / Keyword Planner，不是广告投放系统，也不承诺提供 Google 官方精确搜索量。
+
+## 2. 总体架构
+
+第一版采用模块化单体（Modular Monolith），避免过早微服务化。
 
 ```text
 Browser
   |
   v
-Frontend (Vue 3 + TypeScript)
+Next.js + TypeScript
   |
   | REST/JSON
   v
-Backend (Spring Boot + Java)
+FastAPI + Python 3.12+
   |
-  +---- Google Ads API
-  |       |
-  |       +-- Keyword ideas
-  |       +-- Historical metrics
+  +-- Research Orchestrator
+  |      +-- Keyword Expansion Provider
+  |      +-- Search Volume Provider
+  |      +-- Trend Provider
+  |      +-- SERP Provider
+  |      +-- Community Provider
+  |      +-- Competitor Provider
+  |      +-- AI Analysis Provider
   |
-  +---- MySQL
+  +-- Opportunity Scoring
   |
-  +---- AI Provider（第二阶段）
+  +-- PostgreSQL
+  |
+  +-- Redis（V1 可选；缓存需求出现后启用）
+  |
+  +-- Background Jobs / APScheduler
 ```
 
-## 2. 技术选型
+## 3. 技术选型
 
 ### Frontend
 
-- Vue 3
+- Next.js
 - TypeScript
-- Vite
-- Element Plus 或同等级轻量 UI 组件库
-- ECharts（趋势图）
+- Tailwind CSS
+- ECharts 或同等级图表库
+- TanStack Query
+- React Hook Form / Zod（按实际需要）
 
 ### Backend
 
-- Java 21 LTS
-- Spring Boot 3.x
-- Spring Web
-- Spring Validation
-- Spring Data JPA 或 MyBatis（优先选择团队/项目中更容易维护的一种）
-- Google Ads API Java Client
+- Python 3.12+
+- FastAPI
+- Pydantic v2
+- SQLAlchemy 2.x
+- Alembic
+- httpx
+- pytest
+- Ruff
+- mypy（逐步启用）
+
+### Data / Analysis
+
+- pandas：数据处理场景使用，不强制所有业务逻辑依赖 pandas
+- Playwright：仅用于合规允许的网页自动化场景
+- Provider/Adapter 模式隔离第三方数据源
 
 ### Database
 
-- MySQL 8.x
+- PostgreSQL 16+
+- Redis：V1 可选，用于缓存和后续任务队列扩展
 
 ### Deployment
 
 - Docker
 - Docker Compose
-- 第一版支持本地运行；稳定后可部署到个人云服务器。
+- GitHub Actions
+- 第一版支持本地开发，稳定后部署到个人云服务器
 
-## 3. 模块划分
+## 4. 后端模块
 
 ```text
-backend
-├── keyword
-│   ├── controller
-│   ├── service
-│   ├── domain
-│   └── repository
-├── googleads
-│   ├── client
-│   ├── service
-│   └── config
+backend/app
+├── api
+│   └── routes
+├── core
+│   ├── config
+│   ├── logging
+│   └── security
 ├── research
-├── ai                 # 第二阶段
-├── common
-└── config
+│   ├── domain
+│   ├── service
+│   └── repository
+├── keywords
+│   ├── domain
+│   ├── service
+│   └── repository
+├── providers
+│   ├── keyword_expansion
+│   ├── search_volume
+│   ├── trends
+│   ├── serp
+│   ├── community
+│   ├── competitors
+│   └── ai
+├── scoring
+├── reports
+├── jobs
+└── common
 ```
 
-## 4. API 设计原则
+第三方服务只能通过 provider 接口进入业务层，禁止在 controller 中直接调用外部 API。
 
-前端不能直接调用 Google Ads API。
+## 5. Provider 接口原则
 
-原因：
+每类外部数据定义稳定的内部接口。例如：
 
-- OAuth credential 不应暴露给浏览器。
-- Developer Token 不应暴露给浏览器。
-- Google API 调用需要统一限流、错误处理和缓存。
+```python
+class SearchVolumeProvider(Protocol):
+    async def get_metrics(
+        self,
+        keywords: list[str],
+        country: str,
+        language: str,
+    ) -> list[KeywordMetrics]: ...
+```
 
-所有 Google Ads API 调用由后端完成。
+第一版允许：
 
-## 5. 核心后端接口
+- MockProvider：本地开发和测试必须提供
+- 一个真实 Search Volume Provider
+- 一个真实 Trend Provider
+- 一个真实 SERP Provider
+- 一个真实 Community Provider
+- 一个 AI Provider
 
-第一版建议提供：
+具体供应商可以替换，不把供应商名称写死在核心业务模型中。
+
+## 6. 研究任务流程
 
 ```text
-POST /api/keywords/historical-metrics
-POST /api/keywords/ideas
-GET  /api/researches
-POST /api/researches
-GET  /api/researches/{id}
-PUT  /api/researches/{id}
-DELETE /api/researches/{id}
+用户创建 Research
+        |
+        v
+生成 Seed Keywords
+        |
+        v
+扩展关键词
+        |
+        v
+标准化 / 去重 / 分类
+        |
+        +-------> Search Volume
+        |
+        +-------> Trends
+        |
+        +-------> SERP
+        |
+        +-------> Community
+        |
+        +-------> Competitors
+        |
+        v
+统一数据模型
+        |
+        v
+Opportunity Scoring
+        |
+        v
+AI 深度分析
+        |
+        v
+Opportunity Report
 ```
 
-具体 request/response schema 在 API 文档中定义。
+长任务必须异步执行。前端通过 Research 状态查询或轮询获取进度；后续可升级为 SSE/WebSocket。
 
-## 6. 查询流程
+## 7. API 原则
+
+前端只调用本系统 FastAPI。
+
+核心接口第一版：
 
 ```text
-用户输入关键词
-      |
-      v
-Backend 参数校验
-      |
-      v
-标准化关键词（trim / 去重）
-      |
-      v
-检查缓存
-   /       \
-命中       未命中
- |           |
-返回       Google Ads API
-             |
-             v
-          保存/缓存
-             |
-             v
-          返回前端
+POST /api/v1/researches
+GET  /api/v1/researches
+GET  /api/v1/researches/{id}
+POST /api/v1/researches/{id}/run
+GET  /api/v1/researches/{id}/progress
+GET  /api/v1/researches/{id}/keywords
+GET  /api/v1/researches/{id}/opportunities
+GET  /api/v1/opportunities/{id}
 ```
 
-## 7. 缓存策略
+API 必须统一：
 
-Google Keyword Planner 历史指标不是实时股票行情，因此不需要每次重复请求。
+- request validation
+- response schema
+- pagination
+- error code
+- request id
+- authentication hook（即使 V1 为单用户，也预留）
 
-建议第一版按以下维度建立缓存键：
+## 8. 数据与缓存
+
+所有外部数据至少保存：
+
+- source
+- retrieved_at
+- country
+- language
+- provider_version（如可用）
+- raw/reference metadata（遵守供应商许可）
+
+缓存键应包含：
 
 ```text
-keyword + geo + language + date_range + metric_type
+provider + query + country + language + parameters
 ```
 
-默认允许重复查询命中缓存。
+搜索量、趋势等数据不应每次重复请求。V1 可以先使用 PostgreSQL 缓存表；当并发或任务量增加时启用 Redis。
 
-用户主动刷新时可以提供“强制刷新”能力，但必须受到 API quota 控制。
-
-## 8. 安全
-
-Google Ads OAuth credentials、Developer Token、refresh token 等全部通过环境变量或 Secret 管理。
-
-禁止：
-
-- 提交到 GitHub
-- 写入前端源码
-- 写入 README 示例中的真实 secret
-- 打印完整 token 到日志
-
-`.env` 必须加入 `.gitignore`。
-
-## 9. 错误处理
+## 9. 数据质量
 
 必须区分：
 
-- 参数错误
-- Google OAuth 错误
-- Google Ads API 权限错误
-- quota/rate limit
-- Google API 临时错误
-- 网络错误
-- 数据不存在
-- 系统内部错误
+- observed：外部数据源直接返回
+- estimated：第三方估算
+- inferred：AI/规则推断
 
-用户界面应展示可理解的错误信息；日志中保留技术错误详情。
+禁止把 estimated 或 inferred 数据显示为官方精确数据。
 
-## 10. 可测试性
+Provider 返回空数据时必须记录状态，不得用随机数或假数据填充。
 
-核心业务逻辑不得强依赖真实 Google API 才能测试。
+## 10. AI 边界
 
-Google Ads client 应通过接口/adapter 隔离，以便：
+AI 只基于已经采集的数据进行分析；AI 生成的关键词、痛点、竞品判断和产品建议必须带有来源或推断标记。
 
-- 单元测试使用 mock
-- 集成测试可使用测试账号
-- 本地开发可使用 fixture/mock 数据
+AI 输出必须结构化为 Pydantic schema，禁止直接把自由文本作为核心数据库字段。
 
-## 11. 第一阶段不做的架构
+## 11. 安全
 
-不做：
+所有 API Key、数据库密码和第三方凭证通过环境变量或 Secret 管理。
 
+禁止：
+
+- 提交 `.env`
+- 提交真实 API Key
+- 将 Secret 写入前端
+- 将完整 Secret 写入日志
+- 将用户数据发送到未经配置的第三方 Provider
+
+## 12. 合规与采集原则
+
+- 优先使用官方 API、公开数据或获得授权的数据服务。
+- 遵守目标网站 robots、Terms、API rate limit 和数据许可。
+- 不绕过验证码、登录墙、访问控制或技术限制。
+- 不把需要授权的数据源作为 V1 强依赖。
+- 每个 Provider 必须有 rate limit、timeout、retry 和失败熔断策略。
+
+## 13. 可测试性
+
+核心业务逻辑不得依赖真实外部 API 才能测试。
+
+必须具备：
+
+- Unit tests：评分、关键词标准化、意图分类、报告生成
+- Provider tests：mock responses
+- Integration tests：FastAPI + PostgreSQL
+- E2E smoke test：创建研究 → 执行 → 查看结果
+
+## 14. 可观测性
+
+第一版至少记录：
+
+- request id
+- research id
+- provider
+- duration
+- status
+- error category
+- external request count
+
+禁止记录 API Key、Authorization header 和敏感用户数据。
+
+## 15. V1 明确不做
+
+- Google Ads / Keyword Planner
+- 广告投放
 - 微服务
 - Kubernetes
 - Redis 集群
-- 消息队列
-- 多租户
-- 复杂权限系统
-- 独立搜索引擎
+- Kafka 等复杂消息队列
+- 多租户 SaaS
+- 复杂 RBAC
+- 自建搜索引擎
+- 大规模爬虫平台
 
-这些技术只有在真实需求出现后再引入。
+只有真实需求出现后再升级。
