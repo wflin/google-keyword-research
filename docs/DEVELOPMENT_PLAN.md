@@ -2,9 +2,13 @@
 
 ## 总原则
 
-本项目采用 Python 3.12+ + FastAPI + Next.js + PostgreSQL 的模块化单体架构。
+本项目采用 Python 3.12+ + FastAPI + Next.js + TypeScript + PostgreSQL 的模块化单体架构。
 
 Google Ads / Keyword Planner 不属于本项目依赖，不进入任何 Phase 的验收条件。
+
+V1 核心流程不得依赖收费 API、购买 credits 或必须绑定信用卡的服务。真实公开数据优先；测试可以使用 fixture/replay，但不得把 Mock Provider 作为正常运行数据。
+
+当无法获得可靠的绝对搜索量时，系统使用多源 Demand Signals / Demand Score，不伪造 Google 官方搜索量。
 
 Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试并更新文档，不得擅自扩大范围。
 
@@ -14,14 +18,14 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 
 任务：
 
-1. 创建 `backend/` FastAPI 项目
-2. 创建 `frontend/` Next.js 项目
+1. 按 `docs/PROJECT_STRUCTURE.md` 创建 `apps/api/` FastAPI 项目
+2. 创建 `apps/web/` Next.js + TypeScript 项目
 3. Python 依赖与 lint/test 配置
 4. PostgreSQL + Alembic
 5. Docker Compose
 6. `.env.example` 与 Secret 管理规则
 7. `/health`、基础日志、request id
-8. GitHub Actions：lint + unit test + build
+8. GitHub Actions：lint + unit test + frontend typecheck/build
 
 验收：一条命令可以启动开发环境，前后端健康检查通过。
 
@@ -37,28 +41,31 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - 研究状态
 - 关键词列表
 - 基础筛选/排序
-- Mock Provider
+- Provider 基础接口
+- 真实免费 Suggestion/Keyword Expansion Provider
 - 基础 API
 - 数据库迁移
 
-验收：不依赖任何第三方 API，也可以创建研究并展示 Mock 数据。
+测试允许使用 fixture/replay 数据，但产品运行不使用 Mock Provider。
 
-## Phase 2：关键词扩展 + 搜索需求
+验收：不依赖收费 API，也不依赖 Google Ads，即可创建研究并展示真实 Provider 返回的数据；Provider 暂时不可用时必须明确显示失败状态，而不是生成假数据。
+
+## Phase 2：关键词扩展 + 搜索需求信号
 
 目标：形成第一条真实数据闭环。
 
 任务：
 
 - Keyword Expansion Provider
-- Search Volume Provider
+- 免费/公开 Search Demand Provider（仅使用无需付费账号的来源）
 - 关键词标准化、去重
-- estimated monthly searches
-- CPC / competition（Provider 支持时）
-- 历史数据
+- Demand Signals
+- Demand Score v1
+- 历史数据（Provider 支持时）
 - Provider 缓存
 - 数据来源标识
 
-验收：输入 `invoice` 可以得到真实关键词数据，并明确标注 estimated/source。
+验收：输入 `invoice` 可以得到真实关键词/需求信号，并明确标注 source、retrieved_at 和是否为 estimated；没有可靠绝对搜索量时不得伪造月搜索量。
 
 ## Phase 3：趋势 + SERP + 社区
 
@@ -67,14 +74,14 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 任务：
 
 - Trend Provider
-- SERP Provider
+- Public Web / SERP Provider（仅使用允许访问的公开数据）
 - Community Provider
 - 弱竞争 SERP 分析
 - 用户痛点提取
 - 统一数据模型
 - 任务进度 UI
 
-验收：一次 Research 可以生成多源研究数据。
+验收：一次 Research 可以生成多源研究数据，并记录各数据源的成功、失败、时间和证据。
 
 ## Phase 4：竞品 + Opportunity Score
 
@@ -84,7 +91,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 
 - Competitor Provider
 - 产品/网站信息
-- 定价信息
+- 定价信息（公开可见时）
 - Search Demand Score
 - Trend Score
 - Commercial Intent Score
@@ -94,7 +101,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - MVP Difficulty Score
 - Opportunity Score
 
-验收：每个候选机会可以解释分数来源。
+验收：每个候选机会可以解释分数来源，并能回溯 Evidence。
 
 ## Phase 5：AI 产品机会报告
 
@@ -103,6 +110,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 任务：
 
 - AI Provider
+- 优先支持本地 Ollama/Local AI
 - 结构化 Prompt
 - Pydantic output schema
 - 用户画像
@@ -114,7 +122,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - AI confidence / evidence
 - 报告页面
 
-验收：输入一个种子词，可以生成完整产品机会报告；报告中的事实与推断明确区分。
+验收：输入一个种子词，可以生成完整产品机会报告；报告中的事实与推断明确区分，AI 不得创造不存在的市场数据。
 
 ## Phase 6：批量研究与每日发现
 
@@ -141,7 +149,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - retry / timeout / rate limit
 - 失败任务恢复
 - 数据清理
-- provider 成本统计
+- provider 成本统计（V1 成本必须为 0；仅记录未来可插拔 Provider）
 - API usage metrics
 - 日志与监控
 - Docker production profile
@@ -161,6 +169,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - 订阅计费
 - 团队协作
 - 更丰富的数据源
+- 可选付费数据 Provider
 
 ## 每个 Phase 的 Definition of Done
 
@@ -170,7 +179,7 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 4. Lint/type checks 通过
 5. Docker 环境验证
 6. 文档同步
-7. TODO 更新
+7. TASKS/CURRENT_STATUS/CHANGELOG 更新
 8. Git commit 清晰
 
 禁止：
@@ -179,3 +188,5 @@ Codex 必须严格按照 Phase 顺序开发，每个 Phase 完成后运行测试
 - 将 Secret 提交 Git
 - 在 Controller 直接调用 Provider
 - 未测试就进入下一阶段
+- 为了开发方便把 Mock Provider 当成产品真实数据源
+- 未经批准把付费 API 加入 V1 核心链路
