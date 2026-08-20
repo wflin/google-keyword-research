@@ -1,147 +1,149 @@
 # 数据源设计
 
-## 1. 目标
+## 1. 核心原则
 
-系统不能依赖单一 Google Ads 账户。数据层采用 Provider 架构：每种数据源独立实现、统一输出，任何一个 Provider 不可用时不阻塞整个研究流程。
+本项目 V1 **不依赖任何收费数据 API、Google Ads、Google Keyword Planner 或需要信用卡才能开通的服务**。
 
-## 2. Provider 类型
+同时，V1 不使用 Mock Provider 作为正常开发数据源。开发环境直接运行真实、免费的数据 Provider；如果某个免费数据源暂时不可用，系统必须明确报错或降级，不允许生成假搜索量。
 
-### Search Volume Provider
+> 重要限制：公开免费数据通常无法稳定提供 Google 官方的绝对月搜索量。因此 V1 不承诺“精确 Google 搜索量”，而是建立“需求强度 Demand Signals”体系。未来如果用户主动配置收费 Provider，可作为可选增强，但不是系统前置条件。
 
-职责：提供关键词搜索量估算、CPC、竞争度和历史月度指标。
+## 2. V1 免费真实数据源
 
-第一阶段优先预留 DataForSEO；后续可接入 Ahrefs、Semrush、Google Ads Keyword Planner。
+### 2.1 Google Trends
 
-统一字段：
+用途：衡量相对搜索兴趣、趋势、季节性、地区差异和相关/上升查询。
+
+输出：
 
 ```text
 keyword
 country
 language
-estimated_monthly_searches
-cpc
-competition
-competition_index
-monthly_searches[]
-provider
-queried_at
-```
-
-重要：第三方估算数据必须显示为 Estimated，不得冒充 Google 官方数据。
-
-### Trend Provider
-
-职责：判断需求增长、下降、稳定和季节性。
-
-输出：
-
-```text
-trend_score
+trend_score_0_100
 trend_direction
-trend_period
 trend_series[]
+related_queries[]
 rising_queries[]
-```
-
-### SERP Provider
-
-职责：分析关键词搜索结果和竞争强度。
-
-输出：
-
-```text
-keyword
-rank
-url
-domain
-title
-snippet
-page_type
-competitor_type
-```
-
-### Community Provider
-
-第一阶段优先 Reddit。职责是寻找真实用户问题，而不是统计搜索量。
-
-输出：
-
-```text
+period
+retrieved_at
 source
-post_id
-url
-title
-content_excerpt
-created_at
-engagement
-pain_points[]
 ```
 
-### Competitor Provider
+注意：Google Trends 是相对兴趣指数，不是绝对搜索量。
 
-从 SERP 和公开网站信息中识别竞品，并记录：
+### 2.2 搜索建议 / Autocomplete
 
-- 名称
-- URL
-- 产品类型
-- 目标用户
-- 核心功能
-- 免费/付费
-- 价格
-- 差异化
+用途：发现真实用户输入过的长尾需求和关键词组合。
 
-### AI Provider
-
-职责：解释数据、聚类、识别搜索意图、提取痛点、生成产品机会报告。
-
-AI 不得生成或覆盖真实数据字段；模型推断必须与 Provider 数据分离。
-
-## 3. Provider 接口原则
-
-后端业务层只依赖接口，例如：
+输出：
 
 ```text
-KeywordMetricsProvider
-TrendProvider
-SerpProvider
-CommunityProvider
-CompetitorProvider
-AiAnalysisProvider
+seed_keyword
+suggested_keyword
+source
+retrieved_at
 ```
 
-Provider 实现放在 infrastructure 层。
+搜索建议只用于需求发现，不得转换成虚假的绝对搜索量。
 
-## 4. 缓存
+### 2.3 GitHub REST API
 
-付费 API 必须缓存。缓存键至少包含：
+用途：分析开源项目、Issue、Stars、Forks、更新时间和开发者需求信号。
+
+优先使用认证的免费 GitHub API。GitHub 官方文档显示，认证用户通常有更高的 API 配额；系统必须读取响应中的 rate-limit 信息并主动限流。citeturn0search0turn0search7
+
+### 2.4 Reddit 公共内容
+
+V1 只在合法、公开且无需付费商业 API 的情况下使用 Reddit 可访问的公开页面/公开 feed；不绕过登录、验证码、反爬或访问控制。
+
+由于 Reddit 在 2026 年正在调整公共数据和第三方开发者访问政策，Reddit Provider 必须是可关闭的可选模块，不能阻塞核心 Research 流程。citeturn0reddit48
+
+### 2.5 普通公开网页
+
+竞品信息优先来自竞品官网公开页面，包括产品名称、功能、定价页面、FAQ 和公开文档。
+
+必须遵守目标网站 robots.txt、服务条款和访问限制；不实现验证码绕过、代理池绕过、指纹伪装等反爬措施。
+
+## 3. V1 不使用的数据源
+
+以下服务**不作为 V1 前置依赖**：
+
+- Google Ads / Keyword Planner
+- DataForSEO
+- Ahrefs
+- Semrush
+- 任何需要购买额度的 Keyword API
+- 任何需要购买额度的 SERP API
+- 任何需要付费商业许可才能使用的社区数据 API
+
+未来可以增加这些 Provider，但必须是“可选增强”，不能导致基础系统无法运行。
+
+## 4. 搜索需求指标重新定义
+
+由于免费数据无法可靠获得 Google 官方绝对月搜索量，V1 使用：
 
 ```text
-provider + keyword + country + language + metric_type
+Demand Signals
+├── Trend Strength
+├── Trend Growth
+├── Autocomplete Breadth
+├── Long-tail Depth
+├── Related Query Count
+├── Community Evidence
+└── SERP/Competition Evidence
 ```
 
-保存原始响应摘要和标准化结果，避免重复付费查询。
+系统输出：
+
+```text
+Demand Score: 0-100
+```
+
+必须明确标记为模型计算指标，不得称为 Google Search Volume。
 
 ## 5. 数据可信度
 
-每条数据必须保留：
+每条数据必须保存：
 
-- source/provider
-- queried_at
+- source
+- provider
+- retrieved_at
 - country
 - language
 - raw/normalized 标识
-- confidence（仅适用于模型推断）
+- evidence URL（如适用）
+- confidence（仅用于模型推断）
 
-不得在 Provider 失败时返回随机值或模型生成的搜索量。
+Provider 失败时：
 
-## 6. V1 数据优先级
+- 不返回随机值
+- 不由 AI 猜测搜索量
+- 标记该证据缺失
+- 允许研究继续处理其它 Provider
 
-第一阶段按以下顺序实现：
+## 6. 成本原则
 
-1. Search Volume
-2. Trend
-3. SERP
-4. Reddit
-5. AI Analysis
+V1 数据成本目标：**US$0**。
 
-Product Hunt、GitHub、App Store、Chrome Web Store、Ahrefs、Semrush、Google Ads 均作为后续 Provider。
+系统必须：
+
+- 不要求绑定信用卡
+- 不要求购买 API credits
+- 不依赖付费 SERP API
+- 不依赖付费关键词数据库
+- 对免费 API 严格限流
+- 对重复数据进行本地缓存
+
+## 7. 数据源优先级
+
+第一阶段：
+
+1. Google Trends
+2. Search Suggestions
+3. GitHub
+4. 公开网页竞品信息
+5. Reddit（可选）
+6. 本地 AI 分析
+
+后续如确有必要，再通过独立 Provider 增加收费数据源，但绝不能改变 V1 的可运行性。
