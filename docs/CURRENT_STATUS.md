@@ -9,7 +9,7 @@ Phase 0 — 工程骨架
 
 ## 状态
 
-设计阶段已完成，尚未开始业务代码开发。
+P0-001 已完成，等待执行 P0-002。
 
 ## 已完成
 
@@ -27,34 +27,39 @@ Phase 0 — 工程骨架
 - Codex 开发规范
 - MVP 验收标准
 - 商业化与 Roadmap
+- P0-001 monorepo 目录结构（按 PROJECT_STRUCTURE.md 契约）
 
 ## 当前任务
 
-等待执行 Phase 0。
+P0-002 初始化 FastAPI + Python 3.12+
 
 ## 下一步
 
-1. 创建项目目录结构
-2. 初始化 FastAPI
-3. 初始化 Next.js
-4. 创建 Docker Compose
-5. 接入 PostgreSQL
-6. 配置 SQLAlchemy 2.x
-7. 配置 Alembic
-8. 创建健康检查 API
-9. 创建最小首页
-10. 添加 pytest 基础配置
-11. 添加 CI 基础检查
+1. P0-002 初始化 FastAPI + Python 3.12+
+2. P0-003 初始化 Next.js + TypeScript
+3. P0-004 创建 Docker Compose
+4. P0-005 接入 PostgreSQL
+5. P0-006 配置 SQLAlchemy 2.x
+6. P0-007 配置 Alembic
+7. P0-008 实现 /health API
+8. P0-009 创建最小首页
+9. P0-010 配置 pytest
+10. P0-011 配置 frontend lint/typecheck
+11. P0-012 配置 GitHub Actions CI
+12. P0-013 编写本地启动文档
+13. P0-014 完成 Phase 0 验收
 
 ## 当前已知问题
 
 - 真实 Provider 尚未开始实现
 - 尚未建立生产部署环境
 - 尚未产生真实 Research 数据
+- 根级 docker-compose.yml / .env.example / Makefile 与 apps/api/app/main.py 由后续 Task（P0-002/004/005/013）创建
 
 ## 最后验证
 
-尚未开始代码开发。
+- P0-001：目录骨架已创建，与 docs/PROJECT_STRUCTURE.md 契约对照校验通过
+- 尚未开始代码开发，无测试可运行
 
 ## 重要约束
 
