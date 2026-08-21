@@ -163,6 +163,29 @@
 - pytest：11 passed（test_health 3 + test_database 5 + test_alembic 3）
 - uvicorn GET /health 返回 HTTP 200 {"status": "ok"}
 
+### P0-008 — 完善 Health / Readiness 检查
+
+- 新增 GET /ready：通过现有 SQLAlchemy Engine 真实执行 SELECT 1 检查 PostgreSQL 可达性
+- 数据库正常：HTTP 200 {"status": "ready"}
+- 数据库不可用：HTTP 503 {"status": "not_ready"}（仅记录异常类型，不泄露连接信息）
+- /health 保持 liveness 语义不变：HTTP 200 {"status": "ok"}（数据库挂掉时仍为 200）
+- 复用 app/db/session.py 的 engine，未新建数据库连接层
+- 新增 tests/test_readiness.py（真实 PostgreSQL，2 个用例）
+- 真实故障/恢复验证：docker compose stop postgres 后 /ready=503、/health=200；恢复后 /ready=200
+- 未修改数据库 schema、未创建业务表
+- 更新 CURRENT_STATUS.md、TASKS.md、DEPLOYMENT.md
+
+### Next
+
+执行 Phase 0 / P0-009。
+
+### Verification
+
+- pytest：13 passed（test_health 3 + test_database 5 + test_alembic 3 + test_readiness 2）
+- 手工验证：/health=200、/ready=200；DB 停止后 /ready=503、/health=200；DB 恢复后 /ready=200
+- OpenAPI：/health 与 /ready 均出现
+- \dt：仅 alembic_version，无业务表
+
 ## 2026-08-20
 
 ### Design

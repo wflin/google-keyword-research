@@ -9,7 +9,7 @@ Phase 0 — 工程骨架
 
 ## 状态
 
-P0-007 已完成，等待执行 P0-008。
+P0-008 已完成，等待执行 P0-009。
 
 ## 已完成
 
@@ -35,20 +35,20 @@ P0-007 已完成，等待执行 P0-008。
 - P0-005 PostgreSQL 接入（Docker Compose postgres:16 service，postgres_data volume，healthcheck）
 - P0-006 SQLAlchemy 2.x 数据库层（Engine / Session / get_db dependency，真实 PostgreSQL 连接验证）
 - P0-007 Alembic 迁移基础设施（alembic.ini / alembic/env.py，DATABASE_URL 环境变量，空初始 migration 0001）
+- P0-008 Health / Readiness 检查（/health liveness + /ready readiness，真实 PostgreSQL 验证）
 
 ## 当前任务
 
-P0-008 完善 Health / Readiness 检查
+P0-009 创建最小首页
 
 ## 下一步
 
-1. P0-008 完善 Health / Readiness 检查
-2. P0-009 创建最小首页
-3. P0-010 完善统一测试基础设施
-4. P0-011 配置 frontend lint/typecheck
-5. P0-012 配置 GitHub Actions CI
-6. P0-013 编写本地启动文档
-7. P0-014 完成 Phase 0 验收
+1. P0-009 创建最小首页
+2. P0-010 完善统一测试基础设施
+3. P0-011 配置 frontend lint/typecheck
+4. P0-012 配置 GitHub Actions CI
+5. P0-013 编写本地启动文档
+6. P0-014 完成 Phase 0 验收
 
 ## 当前已知问题
 
@@ -68,6 +68,7 @@ P0-008 完善 Health / Readiness 检查
 - P0-005：PostgreSQL 16 已接入（postgres service / postgres_data volume / app-network / pg_isready healthcheck）；pg_isready 与 SELECT 1 通过；容器重启后数据持久化验证通过；未引入 SQLAlchemy / Alembic / 业务表
 - P0-006：SQLAlchemy 2.0.52 + psycopg 3.3.4 数据库层已建立（app/db session.py + dependencies.py，DATABASE_URL 从环境变量读取）；pytest 8 passed（含真实 PostgreSQL SELECT 1）；uvicorn GET /health 保持 HTTP 200 {"status": "ok"}
 - P0-007：Alembic 1.19.1 已初始化（alembic.ini + alembic/env.py + 空 migration 0001，DATABASE_URL 从环境变量读取）；真实 PostgreSQL upgrade → downgrade → upgrade 全流程通过；\dt 仅 alembic_version，无业务表；pytest 11 passed
+- P0-008：新增 GET /ready（复用 SQLAlchemy Engine 真实执行 SELECT 1）；数据库正常 /ready=200 {"status": "ready"}，数据库停止 /ready=503 {"status": "not_ready"} 且 /health 保持 200；恢复后 /ready=200；pytest 13 passed
 
 ## 重要约束
 

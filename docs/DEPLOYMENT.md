@@ -46,6 +46,13 @@ alembic heads
 alembic downgrade base
 ```
 
+Health / readiness:
+
+- `GET /health` — liveness: the application process is up (`{"status": "ok"}`, 200).
+
+- `GET /ready` — readiness: verifies PostgreSQL connectivity via `SELECT 1`; `{"status": "ready"}` (200) or `{"status": "not_ready"}` (503).
+
+
 ## 3. Production topology
 
 ```text
