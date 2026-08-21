@@ -53,6 +53,28 @@
 
 - git diff 确认仅 docs/TASKS.md、docs/CURRENT_STATUS.md、docs/CHANGELOG.md 变化
 
+### P0-003 — 初始化 Next.js + TypeScript
+
+- 使用 create-next-app 初始化 apps/web（Next.js 16.3.1 / React 19.2.8 / TypeScript 5）
+- 采用 App Router：app/layout.tsx 与 app/page.tsx 最小首页
+- 使用 npm 作为包管理器，提交 package-lock.json
+- 保留 strict TypeScript，新增 typecheck 脚本（tsc --noEmit）
+- ESLint 使用 Next.js 官方 flat config
+- 根 README 补充前端启动说明
+- 更新 CURRENT_STATUS.md 与 TASKS.md
+
+### Next
+
+执行 Phase 0 / P0-004。
+
+### Verification
+
+- Node.js 22.14.0 / npm 10.9.2 / Next.js 16.3.1 / TypeScript 5
+- npm run typecheck：通过
+- npm run lint：通过
+- npm run build：通过
+- npm run dev：启动成功，首页 HTTP 200
+
 ## 2026-08-20
 
 ### Design

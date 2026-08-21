@@ -79,3 +79,14 @@ MVP / 定价 / 风险建议
 ## 重要限制
 
 项目不得声称提供“Google 官方精确搜索量”，除非未来实际接入并获得相应官方数据。所有估算搜索量必须显示数据来源、查询时间、国家/地区和语言。
+## 本地开发启动
+
+前端（Next.js）：
+
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
+访问 http://localhost:3000
