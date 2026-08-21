@@ -5,7 +5,7 @@
 ## Phase 0 — 工程骨架
 
 - [x] P0-001 创建 monorepo 目录结构
-- [ ] P0-002 初始化 FastAPI + Python 3.12+
+- [x] P0-002 初始化 FastAPI + Python 3.12+
 - [ ] P0-003 初始化 Next.js + TypeScript
 - [ ] P0-004 创建 Docker Compose
 - [ ] P0-005 接入 PostgreSQL

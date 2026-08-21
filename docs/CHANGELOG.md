@@ -20,6 +20,23 @@
 - 目录结构与 PROJECT_STRUCTURE.md 对照校验通过
 - 尚未开始代码开发，无测试可运行
 
+### P0-002 — 初始化 FastAPI
+
+- 创建 apps/api Python 项目（pyproject.toml，含 build-system 与 dev 依赖）
+- 创建 FastAPI 入口 app/main.py 与健康检查路由 app/api/health.py
+- 创建 tests/test_health.py（3 个用例）
+- 更新 CURRENT_STATUS.md 与 TASKS.md
+
+### Next
+
+执行 Phase 0 / P0-003。
+
+### Verification
+
+- Python 3.13.3（满足 3.12+）
+- pytest：3 passed
+- Uvicorn 启动后 GET /health 返回 HTTP 200 与 {"status": "ok"}
+
 ## 2026-08-20
 
 ### Design
