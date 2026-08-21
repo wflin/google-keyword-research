@@ -1,0 +1,7 @@
+# Project-wide Docker Compose foundation.
+# Runtime components are added by later Phase 0 tasks.
+name: google-keyword-research
+
+networks:
+  app-network:
+    driver: bridge

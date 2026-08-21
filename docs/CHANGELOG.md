@@ -75,6 +75,26 @@
 - npm run build：通过
 - npm run dev：启动成功，首页 HTTP 200
 
+### P0-004 — 创建 Docker Compose
+
+- 按 docs/PROJECT_STRUCTURE.md 契约创建根级 docker-compose.yml（唯一项目级 Compose 文件）
+- 使用当前 Compose Specification，不含已废弃的 version 字段
+- 创建项目专用 app-network（bridge）作为统一基础设施网络
+- 未创建任何 service / volume / 端口映射 / 环境变量
+- 未创建 Dockerfile（项目文档未要求 P0-004 创建）
+- 未接入 PostgreSQL（由 P0-005 处理）
+- 更新 CURRENT_STATUS.md 与 TASKS.md
+
+### Next
+
+执行 Phase 0 / P0-005。
+
+### Verification
+
+- Docker 29.7.2 / Docker Compose v5.4.0 / Docker context desktop-linux
+- docker compose -f docker-compose.yml config：通过
+- 无 service 可运行，未执行 docker compose up
+
 ## 2026-08-20
 
 ### Design
