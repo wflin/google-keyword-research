@@ -12,7 +12,7 @@
 - [x] P0-006 配置 SQLAlchemy 2.x
 - [x] P0-007 配置 Alembic
 - [x] P0-008 完善 Health / Readiness 检查
-- [ ] P0-009 创建最小首页
+- [x] P0-009 创建最小首页
 - [ ] P0-010 完善统一测试基础设施
 - [ ] P0-011 配置 frontend lint/typecheck
 - [ ] P0-012 配置 GitHub Actions CI

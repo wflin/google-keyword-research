@@ -186,6 +186,29 @@
 - OpenAPI：/health 与 /ready 均出现
 - \dt：仅 alembic_version，无业务表
 
+### P0-009 — 创建最小首页
+
+- 将 apps/web/app/page.tsx 改造成产品最小 SaaS 首页（Header / Hero / Keyword Research Entry / Features / Footer）
+- 建立品牌与产品定位：Google Keyword Research / Discover better keywords for your business.
+- 增加关键词研究入口 UI（apps/web/components/KeywordResearchForm.tsx，UI only：无 API 请求、无数据库请求、无虚假数据）
+- 增加三个产品功能方向 Feature Card：Keyword Discovery / Keyword Analysis / Keyword Organization
+- 完成响应式布局（桌面三列 / 移动端单列，无横向滚动）
+- layout.tsx 更新最小 metadata（title / description）
+- 保持系统字体；未引入外部字体、UI 框架或任何新 npm 依赖
+- 未连接后端、未接入任何外部 API、未产生虚假关键词数据
+- 更新 CURRENT_STATUS.md 与 TASKS.md
+
+### Next
+
+执行 Phase 0 / P0-010。
+
+### Verification
+
+- npm run typecheck：通过
+- npm run lint：通过
+- npm run build：通过
+- npm run dev：首页 HTTP 200，Header / Hero / 关键词输入 / Feature Cards / Footer 均正常渲染
+
 ## 2026-08-20
 
 ### Design

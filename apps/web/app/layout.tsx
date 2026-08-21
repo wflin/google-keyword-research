@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Google Keyword Research",
-  description: "Keyword research platform",
+  description: "Keyword research tool for discovering and analyzing keywords.",
 };
 
 export default function RootLayout({
