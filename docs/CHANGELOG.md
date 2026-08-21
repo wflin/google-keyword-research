@@ -37,6 +37,22 @@
 - pytest：3 passed
 - Uvicorn 启动后 GET /health 返回 HTTP 200 与 {"status": "ok"}
 
+### 文档清理 — Phase 0 Task 定义
+
+- P0-008 从“实现 /health API”调整为“完善 Health / Readiness 检查”
+- P0-010 从“配置 pytest”调整为“完善统一测试基础设施”
+- 避免与 P0-002 已完成工作重复
+- 无代码修改，仅修正 Task 定义
+- 更新 CURRENT_STATUS.md 与 TASKS.md
+
+### Next
+
+执行 Phase 0 / P0-003。
+
+### Verification
+
+- git diff 确认仅 docs/TASKS.md、docs/CURRENT_STATUS.md、docs/CHANGELOG.md 变化
+
 ## 2026-08-20
 
 ### Design

@@ -29,6 +29,7 @@ P0-002 已完成，等待执行 P0-003。
 - 商业化与 Roadmap
 - P0-001 monorepo 目录结构（按 PROJECT_STRUCTURE.md 契约）
 - P0-002 FastAPI 后端初始化（apps/api，含 GET /health）
+- Phase 0 Task 定义清理（P0-008 / P0-010 调整）
 
 ## 当前任务
 
@@ -41,9 +42,9 @@ P0-003 初始化 Next.js + TypeScript
 3. P0-005 接入 PostgreSQL
 4. P0-006 配置 SQLAlchemy 2.x
 5. P0-007 配置 Alembic
-6. P0-008 实现 /health API
+6. P0-008 完善 Health / Readiness 检查
 7. P0-009 创建最小首页
-8. P0-010 配置 pytest
+8. P0-010 完善统一测试基础设施
 9. P0-011 配置 frontend lint/typecheck
 10. P0-012 配置 GitHub Actions CI
 11. P0-013 编写本地启动文档
@@ -60,6 +61,7 @@ P0-003 初始化 Next.js + TypeScript
 
 - P0-001：目录骨架已创建，与 docs/PROJECT_STRUCTURE.md 契约对照校验通过
 - P0-002：FastAPI 后端初始化完成，pytest 3 passed，GET /health 返回 HTTP 200 与 {"status": "ok"}
+- 文档清理：Phase 0 Task 定义已修正（P0-008 → 完善 Health / Readiness 检查；P0-010 → 完善统一测试基础设施），无代码修改
 
 ## 重要约束
 
