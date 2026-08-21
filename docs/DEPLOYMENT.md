@@ -31,6 +31,12 @@ docker compose ps
 
 PostgreSQL is published on `localhost:5432`. Container-to-container connections use the service name `postgres`.
 
+
+The backend runs on the host and connects to the Docker PostgreSQL. Copy `.env.example` to `.env` and provide `DATABASE_URL`:
+- Host machine (current local setup): `postgresql+psycopg://...@localhost:5432/keyword_research`
+- Future backend container: `postgresql+psycopg://...@postgres:5432/keyword_research` (service name `postgres`)
+
+
 ## 3. Production topology
 
 ```text

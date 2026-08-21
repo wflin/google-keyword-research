@@ -118,6 +118,27 @@
 - 持久化验证：临时表数据在容器重启后仍存在（临时表已删除）
 - PostgreSQL 容器保持运行
 
+### P0-006 — 初始化 SQLAlchemy
+
+- 新增生产依赖 sqlalchemy==2.0.52 与 psycopg[binary]==3.3.4（Psycopg 3）
+- 创建 apps/api/app/db 数据库层：session.py（Engine + SessionLocal，DATABASE_URL 从环境变量读取）与 dependencies.py（get_db FastAPI dependency，yield + close）
+- 统一 .env.example 的 DATABASE_URL 为 postgresql+psycopg:// 格式
+- 新增 tests/test_database.py：真实连接 Docker PostgreSQL 的 Engine / Session / SELECT 1 / 关闭与连接池回收测试
+- 未创建业务 Model；未引入 Alembic / Migration
+- 未修改 /health、docker-compose.yml、Next.js
+- 更新 CURRENT_STATUS.md、TASKS.md、DEPLOYMENT.md
+
+### Next
+
+执行 Phase 0 / P0-007。
+
+### Verification
+
+- SQLAlchemy 2.0.52 / psycopg 3.3.4（Python 3.13.3）
+- pytest：8 passed（test_health 3 + test_database 5，真实 PostgreSQL）
+- 真实连接：engine.connect().execute(text("SELECT 1")).scalar() 返回 1
+- uvicorn 启动后 GET /health 返回 HTTP 200 {"status": "ok"}
+
 ## 2026-08-20
 
 ### Design
