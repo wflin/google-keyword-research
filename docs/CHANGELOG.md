@@ -95,6 +95,29 @@
 - docker compose -f docker-compose.yml config：通过
 - 无 service 可运行，未执行 docker compose up
 
+### P0-005 — 接入 PostgreSQL
+
+- 在根级 docker-compose.yml 增加 postgres service（image: postgres:16）
+- 使用命名 volume postgres_data 持久化数据（/var/lib/postgresql/data）
+- 加入 P0-004 创建的 app-network
+- 配置 pg_isready 健康检查（容器状态 healthy）
+- 开放 5432:5432 供本机访问
+- 新增 .env.example（POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD / DATABASE_URL，仅本地开发）
+- 未修改 FastAPI / Next.js；未引入 SQLAlchemy / Alembic / 业务表 / migration
+- 更新 CURRENT_STATUS.md、TASKS.md、DEPLOYMENT.md
+
+### Next
+
+执行 Phase 0 / P0-006。
+
+### Verification
+
+- PostgreSQL 16.15（postgres:16）
+- docker compose config：通过
+- pg_isready：accepting connections；SELECT 1 成功
+- 持久化验证：临时表数据在容器重启后仍存在（临时表已删除）
+- PostgreSQL 容器保持运行
+
 ## 2026-08-20
 
 ### Design

@@ -8,7 +8,7 @@
 - [x] P0-002 初始化 FastAPI + Python 3.12+
 - [x] P0-003 初始化 Next.js + TypeScript
 - [x] P0-004 创建 Docker Compose
-- [ ] P0-005 接入 PostgreSQL
+- [x] P0-005 接入 PostgreSQL
 - [ ] P0-006 配置 SQLAlchemy 2.x
 - [ ] P0-007 配置 Alembic
 - [ ] P0-008 完善 Health / Readiness 检查

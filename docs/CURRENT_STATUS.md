@@ -9,7 +9,7 @@ Phase 0 — 工程骨架
 
 ## 状态
 
-P0-004 已完成，等待执行 P0-005。
+P0-005 已完成，等待执行 P0-006。
 
 ## 已完成
 
@@ -32,30 +32,31 @@ P0-004 已完成，等待执行 P0-005。
 - Phase 0 Task 定义清理（P0-008 / P0-010 调整）
 - P0-003 Next.js + TypeScript 前端初始化（apps/web，含最小首页）
 - P0-004 Docker Compose 基础设施（根级 docker-compose.yml，app-network 网络）
+- P0-005 PostgreSQL 接入（Docker Compose postgres:16 service，postgres_data volume，healthcheck）
 
 ## 当前任务
 
-P0-005 接入 PostgreSQL
+P0-006 配置 SQLAlchemy 2.x
 
 ## 下一步
 
-1. P0-005 接入 PostgreSQL
-2. P0-006 配置 SQLAlchemy 2.x
-3. P0-007 配置 Alembic
-4. P0-008 完善 Health / Readiness 检查
-5. P0-009 创建最小首页
-6. P0-010 完善统一测试基础设施
-7. P0-011 配置 frontend lint/typecheck
-8. P0-012 配置 GitHub Actions CI
-9. P0-013 编写本地启动文档
-10. P0-014 完成 Phase 0 验收
+1. P0-006 配置 SQLAlchemy 2.x
+2. P0-007 配置 Alembic
+3. P0-008 完善 Health / Readiness 检查
+4. P0-009 创建最小首页
+5. P0-010 完善统一测试基础设施
+6. P0-011 配置 frontend lint/typecheck
+7. P0-012 配置 GitHub Actions CI
+8. P0-013 编写本地启动文档
+9. P0-014 完成 Phase 0 验收
 
 ## 当前已知问题
 
 - 真实 Provider 尚未开始实现
 - 尚未建立生产部署环境
 - 尚未产生真实 Research 数据
-- 根级 .env.example / Makefile 由后续 Task（P0-005/013）创建
+- 根级 Makefile 由后续 Task（P0-013）创建
+- docs/TODO.md 为历史辅助清单，尚未同步 Phase 0 进度（P0-001 ~ P0-005 仍显示未完成）
 
 ## 最后验证
 
@@ -64,6 +65,7 @@ P0-005 接入 PostgreSQL
 - 文档清理：Phase 0 Task 定义已修正（P0-008 → 完善 Health / Readiness 检查；P0-010 → 完善统一测试基础设施），无代码修改
 - P0-003：Next.js 16.3.1 前端初始化完成（Node 22.14.0 / npm 10.9.2）；typecheck / lint / build 通过；dev server 首页 HTTP 200
 - P0-004：根级 docker-compose.yml 已创建（Docker 29.7.2 / Compose v5.4.0 / context desktop-linux）；docker compose config 通过；未创建 service / volume；PostgreSQL 未接入
+- P0-005：PostgreSQL 16 已接入（postgres service / postgres_data volume / app-network / pg_isready healthcheck）；pg_isready 与 SELECT 1 通过；容器重启后数据持久化验证通过；未引入 SQLAlchemy / Alembic / 业务表
 
 ## 重要约束
 

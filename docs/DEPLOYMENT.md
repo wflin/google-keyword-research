@@ -21,6 +21,16 @@ Provide `.env.example`; never commit real credentials.
 
 Local startup must be documented with one short command path.
 
+Start the local PostgreSQL with Docker Compose:
+
+```bash
+cp .env.example .env
+docker compose up -d postgres
+docker compose ps
+```
+
+PostgreSQL is published on `localhost:5432`. Container-to-container connections use the service name `postgres`.
+
 ## 3. Production topology
 
 ```text
