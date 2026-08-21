@@ -34,13 +34,13 @@ def _run_alembic(*args: str) -> subprocess.CompletedProcess[str]:
 def test_alembic_heads_runs() -> None:
     result = _run_alembic("heads")
     assert result.returncode == 0, result.stderr
-    assert "0001 (head)" in result.stdout
+    assert "0002 (head)" in result.stdout
 
 
 def test_alembic_current_matches_head() -> None:
     result = _run_alembic("current")
     assert result.returncode == 0, result.stderr
-    assert "0001 (head)" in result.stdout
+    assert "0002 (head)" in result.stdout
 
 
 def test_alembic_has_single_head() -> None:

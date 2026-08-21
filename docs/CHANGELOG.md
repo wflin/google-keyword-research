@@ -234,6 +234,33 @@
 - 前端：npm run typecheck / npm run lint / npm run build 全部通过
 - 仅已知 warning：StarletteDeprecationWarning（httpx/starlette.testclient，记录不升级依赖）
 
+### P1-001 — Research 数据模型
+
+- 建立统一 Declarative Base（apps/api/app/db/base.py）：单一 Base + UUID 主键 Mixin + 命名约定 + timezone-aware UTC 时间
+- 建立业务模型 apps/api/app/models/（research.py + keywords.py）：ResearchProject / Keyword / ResearchKeyword / KeywordMetricSnapshot
+- 遵循 docs/DATABASE.md：research_project（name/seed_keyword/country_code/language_code/status 等）、keyword（keyword_text/normalized_keyword + 唯一约束）、research_keyword（research_id + keyword_id 唯一）、keyword_metric_snapshot（estimated_* 指标全部可 NULL，绝不伪造搜索量）
+- Keyword 数据源无关：source_type（seed/provider/imported/manual 等）放在关联结果而非关键词本身；指标按 source + retrieved_at 作为观测快照
+- 规范化策略 normalize_keyword：trim + lowercase + 连续空白折叠，确定且可测试，支持中文/英文/数字/特殊字符
+- PostgreSQL 外键全部 ON DELETE CASCADE（关联/快照子记录随父记录删除），已记录理由
+- Alembic migration 0002_create_research_tables：创建 4 张业务表；downgrade 按依赖顺序删除；未修改 0001
+- 真实 PostgreSQL 验证：upgrade head / downgrade 0001 / 再次 upgrade head 全流程通过；current=0002 (head)；业务表仅 4 张 + alembic_version
+- 新增 tests/test_models.py（10 个真实 PostgreSQL 测试）：Research/Keyword 创建与读取、关联导航、唯一约束、规范化、NULL 指标、FK 违规、级联删除；事务回滚清理，无测试残留数据
+- 更新 test_alembic.py 期望 revision：0001 → 0002（保持精确断言风格）
+- 未接入 Google API / Google Ads / Keyword Planner；未使用收费 API；未实现数据采集、Search Volume、CPC、Competition、Trend
+- 未新增 Research API；未修改 FastAPI route；未修改前端；未修改 Docker
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-002（Research CRUD API）。
+
+### Verification
+
+- pytest：24 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10），真实 PostgreSQL
+- Alembic：upgrade 0001 → 0002；downgrade 0002 → 0001（业务表删除）；再次 upgrade head 恢复；current=0002 (head)、heads=0002
+- 数据库：4 张业务表存在且无测试残留数据（各表 count=0）
+- 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
+
 ## 2026-08-20
 
 ### Design

@@ -22,9 +22,12 @@ if not database_url:
         "DATABASE_URL is not set. Copy .env.example to .env or export DATABASE_URL."
     )
 
-# No business models exist yet; wire target_metadata to Base.metadata
-# when models are introduced in later tasks.
-target_metadata = None
+# Import the model package so every business model is registered on
+# Base.metadata; Alembic autogenerate uses this as target_metadata.
+import app.models  # noqa: F401
+from app.db.base import Base
+
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
