@@ -73,3 +73,56 @@ Keep a small human-reviewed benchmark of opportunity reports. Track:
 - recommendation usefulness
 
 Do not optimize only for a numeric AI score.
+
+## 7. Unified local validation commands
+
+All local validation runs from a clean working tree on the `main` branch.
+
+### Backend
+
+Prerequisite: PostgreSQL must be running and healthy.
+
+```bash
+docker compose ps            # postgres must be healthy
+cd apps/api
+python -m pytest -v          # requires DATABASE_URL (see .env.example)
+```
+
+Database tests connect to the real PostgreSQL from docker compose (postgres:16).
+Mocking PostgreSQL, the SQLAlchemy Engine, Session, Alembic, /health or /ready is forbidden.
+
+Readiness database-down scenario (manual verification with the real lifecycle):
+
+```bash
+docker compose stop postgres
+# GET /ready must return 503 {"status": "not_ready"}
+# GET /health must still return 200 {"status": "ok"}
+docker compose start postgres
+# after healthy, GET /ready must return 200 {"status": "ready"}
+```
+
+### Frontend
+
+```bash
+cd apps/web
+npm run typecheck
+npm run lint
+npm run build
+```
+
+### Full-stack regression checklist
+
+1. PostgreSQL healthy (`docker compose ps`)
+2. backend `python -m pytest -v`
+3. frontend `npm run typecheck`, `npm run lint`, `npm run build`
+4. `git status` clean
+
+## 8. Codex acceptance criteria
+
+Every completed Task must at least pass:
+
+- Backend Task: pytest passes; database-related tests use the real PostgreSQL; no secrets or sensitive data leak.
+- Frontend Task: typecheck, lint and build all pass.
+- Full-stack Task: backend pytest plus frontend typecheck, lint and build all pass.
+- Task touching Docker: additionally run `docker compose config`.
+- Task touching the database: additionally verify against the real database.

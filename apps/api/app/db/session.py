@@ -14,7 +14,7 @@ if not database_url:
         "DATABASE_URL is not set. Copy .env.example to .env or export DATABASE_URL."
     )
 
-engine = create_engine(database_url)
+engine = create_engine(database_url, connect_args={"connect_timeout": 5})
 
 SessionLocal = sessionmaker(bind=engine)
 

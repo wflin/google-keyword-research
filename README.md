@@ -90,3 +90,23 @@ npm run dev
 ```
 
 访问 http://localhost:3000
+
+## 测试
+
+后端（需要 PostgreSQL 运行且 healthy）：
+
+```bash
+cd apps/api
+python -m pytest -v
+```
+
+前端：
+
+```bash
+cd apps/web
+npm run typecheck
+npm run lint
+npm run build
+```
+
+详细说明见 docs/TESTING.md。

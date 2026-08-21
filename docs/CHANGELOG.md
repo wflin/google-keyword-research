@@ -209,6 +209,31 @@
 - npm run build：通过
 - npm run dev：首页 HTTP 200，Header / Hero / 关键词输入 / Feature Cards / Footer 均正常渲染
 
+### P0-010 — 完善统一测试基础设施
+
+- 统一 pytest 执行方式：cd apps/api && python -m pytest -v（testpaths / pythonpath 已在 pyproject.toml 配置）
+- 保留并运行真实 PostgreSQL 测试（docker compose postgres:16，无 Mock 数据库 / Engine / Session / Alembic / /health / /ready）
+- 完善 Health / Readiness 验证：DB 正常时 /health=200、/ready=200；DB 停止时 /ready=503 且 /health 保持 200；恢复后 /ready=200（真实 docker compose stop/start 生命周期验证）
+- SQLAlchemy Engine 增加 connect_timeout=5，数据库不可达时 readiness 快速失败而非长时间挂起
+- 完善 Alembic 基础设施测试：新增 test_alembic_has_single_head 确认唯一 head=0001；downgrade base → upgrade head 全流程通过；数据库仅 alembic_version
+- 建立前端 typecheck/lint/build 统一验证（npm run typecheck / npm run lint / npm run build 全部通过）
+- 更新 docs/TESTING.md：统一本地验证命令、Readiness 数据库停止验证流程、Codex 验收标准
+- 根 README 增加最小测试说明
+- 未引入收费 API；未引入 Mock 数据库；未引入额外测试框架（Playwright / Jest / Vitest 等）；未修改业务功能、数据库 schema、Docker 架构、Alembic migration、前端 UI
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-001（Research 数据模型）。
+
+### Verification
+
+- pytest：14 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2），真实 PostgreSQL
+- /health 与 /ready：DB 正常 /health=200、/ready=200；DB 停止 /ready=503、/health=200；DB 恢复 /ready=200
+- Alembic：heads=0001、current=0001、downgrade base → upgrade head 通过
+- 前端：npm run typecheck / npm run lint / npm run build 全部通过
+- 仅已知 warning：StarletteDeprecationWarning（httpx/starlette.testclient，记录不升级依赖）
+
 ## 2026-08-20
 
 ### Design

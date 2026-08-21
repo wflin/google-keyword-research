@@ -41,3 +41,9 @@ def test_alembic_current_matches_head() -> None:
     result = _run_alembic("current")
     assert result.returncode == 0, result.stderr
     assert "0001 (head)" in result.stdout
+
+
+def test_alembic_has_single_head() -> None:
+    result = _run_alembic("heads")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.count("(head)") == 1
