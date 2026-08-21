@@ -139,6 +139,30 @@
 - 真实连接：engine.connect().execute(text("SELECT 1")).scalar() 返回 1
 - uvicorn 启动后 GET /health 返回 HTTP 200 {"status": "ok"}
 
+### P0-007 — 初始化 Alembic
+
+- 新增生产依赖 alembic==1.19.1
+- 在 apps/api 初始化 Alembic（alembic.ini + alembic/ 目录：env.py / script.py.mako / versions/）
+- alembic.ini 不包含数据库 URL；env.py 从 DATABASE_URL 环境变量读取连接，支持 online / offline 模式，target_metadata = None（当前无业务 Model）
+- 创建空初始 migration：versions/0001_initial_empty.py（upgrade / downgrade 均为空，不创建任何表）
+- 真实 PostgreSQL 验证：upgrade head → current → downgrade base → 再次 upgrade head 全流程通过
+- 数据库仅存在 alembic_version 管理表，无业务表
+- 未修改 docker-compose.yml、FastAPI API、Next.js
+- 更新 CURRENT_STATUS.md、TASKS.md、DEPLOYMENT.md
+
+### Next
+
+执行 Phase 0 / P0-008。
+
+### Verification
+
+- Alembic 1.19.1（Python 3.13.3 / SQLAlchemy 2.0.52 / psycopg 3.3.4）
+- alembic heads：0001 (head)
+- alembic upgrade head / current / downgrade base / 再次 upgrade head：全部通过
+- \dt：仅 alembic_version（version_num=0001），无业务表
+- pytest：11 passed（test_health 3 + test_database 5 + test_alembic 3）
+- uvicorn GET /health 返回 HTTP 200 {"status": "ok"}
+
 ## 2026-08-20
 
 ### Design

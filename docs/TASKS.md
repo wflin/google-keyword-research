@@ -10,7 +10,7 @@
 - [x] P0-004 创建 Docker Compose
 - [x] P0-005 接入 PostgreSQL
 - [x] P0-006 配置 SQLAlchemy 2.x
-- [ ] P0-007 配置 Alembic
+- [x] P0-007 配置 Alembic
 - [ ] P0-008 完善 Health / Readiness 检查
 - [ ] P0-009 创建最小首页
 - [ ] P0-010 完善统一测试基础设施

@@ -9,7 +9,7 @@ Phase 0 — 工程骨架
 
 ## 状态
 
-P0-006 已完成，等待执行 P0-007。
+P0-007 已完成，等待执行 P0-008。
 
 ## 已完成
 
@@ -34,21 +34,21 @@ P0-006 已完成，等待执行 P0-007。
 - P0-004 Docker Compose 基础设施（根级 docker-compose.yml，app-network 网络）
 - P0-005 PostgreSQL 接入（Docker Compose postgres:16 service，postgres_data volume，healthcheck）
 - P0-006 SQLAlchemy 2.x 数据库层（Engine / Session / get_db dependency，真实 PostgreSQL 连接验证）
+- P0-007 Alembic 迁移基础设施（alembic.ini / alembic/env.py，DATABASE_URL 环境变量，空初始 migration 0001）
 
 ## 当前任务
 
-P0-007 配置 Alembic
+P0-008 完善 Health / Readiness 检查
 
 ## 下一步
 
-1. P0-007 配置 Alembic
-2. P0-008 完善 Health / Readiness 检查
-3. P0-009 创建最小首页
-4. P0-010 完善统一测试基础设施
-5. P0-011 配置 frontend lint/typecheck
-6. P0-012 配置 GitHub Actions CI
-7. P0-013 编写本地启动文档
-8. P0-014 完成 Phase 0 验收
+1. P0-008 完善 Health / Readiness 检查
+2. P0-009 创建最小首页
+3. P0-010 完善统一测试基础设施
+4. P0-011 配置 frontend lint/typecheck
+5. P0-012 配置 GitHub Actions CI
+6. P0-013 编写本地启动文档
+7. P0-014 完成 Phase 0 验收
 
 ## 当前已知问题
 
@@ -67,6 +67,7 @@ P0-007 配置 Alembic
 - P0-004：根级 docker-compose.yml 已创建（Docker 29.7.2 / Compose v5.4.0 / context desktop-linux）；docker compose config 通过；未创建 service / volume；PostgreSQL 未接入
 - P0-005：PostgreSQL 16 已接入（postgres service / postgres_data volume / app-network / pg_isready healthcheck）；pg_isready 与 SELECT 1 通过；容器重启后数据持久化验证通过；未引入 SQLAlchemy / Alembic / 业务表
 - P0-006：SQLAlchemy 2.0.52 + psycopg 3.3.4 数据库层已建立（app/db session.py + dependencies.py，DATABASE_URL 从环境变量读取）；pytest 8 passed（含真实 PostgreSQL SELECT 1）；uvicorn GET /health 保持 HTTP 200 {"status": "ok"}
+- P0-007：Alembic 1.19.1 已初始化（alembic.ini + alembic/env.py + 空 migration 0001，DATABASE_URL 从环境变量读取）；真实 PostgreSQL upgrade → downgrade → upgrade 全流程通过；\dt 仅 alembic_version，无业务表；pytest 11 passed
 
 ## 重要约束
 

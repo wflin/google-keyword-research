@@ -37,6 +37,15 @@ The backend runs on the host and connects to the Docker PostgreSQL. Copy `.env.e
 - Future backend container: `postgresql+psycopg://...@postgres:5432/keyword_research` (service name `postgres`)
 
 
+Run Alembic migrations from `apps/api`:
+
+```bash
+alembic upgrade head
+alembic current
+alembic heads
+alembic downgrade base
+```
+
 ## 3. Production topology
 
 ```text
