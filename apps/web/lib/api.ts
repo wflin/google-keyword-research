@@ -68,3 +68,58 @@ export async function createResearch(
     detail,
   );
 }
+
+export type ResearchJob = {
+  id: string;
+  research_id: string;
+  status: string;
+  started_at: string | null;
+  finished_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ResearchJobList = {
+  items: ResearchJob[];
+};
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, init);
+
+  if (response.ok) {
+    return (await response.json()) as T;
+  }
+
+  let detail: unknown = null;
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    detail = body.detail ?? null;
+  } catch {
+    // Non-JSON error responses are handled with the generic message.
+  }
+
+  throw new ApiError(
+    response.status,
+    `Request to ${path} failed (HTTP ${response.status})`,
+    detail,
+  );
+}
+
+export async function getResearch(researchId: string): Promise<Research> {
+  return requestJson<Research>(`/api/researches/${researchId}`);
+}
+
+export async function getResearchJobs(
+  researchId: string,
+): Promise<ResearchJobList> {
+  return requestJson<ResearchJobList>(
+    `/api/researches/${researchId}/jobs`,
+  );
+}
+
+export async function runResearch(researchId: string): Promise<ResearchJob> {
+  return requestJson<ResearchJob>(`/api/researches/${researchId}/run`, {
+    method: "POST",
+  });
+}

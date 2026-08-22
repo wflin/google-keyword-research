@@ -9,7 +9,7 @@ Phase 1 — Research
 
 ## 状态
 
-P1-005 已完成，等待执行 P1-006。
+P1-006 已完成，等待执行 P1-007。
 
 ## 已完成
 
@@ -43,23 +43,23 @@ P1-005 已完成，等待执行 P1-006。
 - P1-003 Research 状态机（正式状态：draft / running / completed / failed / cancelled；合法转换：draft→running、draft→cancelled、running→completed、running→failed、running→cancelled；终态：completed / failed / cancelled；PATCH status 经状态机校验，非法转换 409、非法值 422、同状态 no-op；状态机集中在 app/services/research.py，可被后续 Service / Job 复用；无 migration）
 - P1-004 Research Job（ResearchJob 模型 research_job：research_id FK ON DELETE CASCADE + 索引 + timezone-aware UTC 时间；ResearchJobStatus：pending / running / completed / failed / cancelled，转换 pending→running、pending→cancelled、running→completed、running→failed、running→cancelled，终态 completed / failed / cancelled；同步 Run API POST /api/researches/{research_id}/run（draft→completed，重复/非 draft 409，不存在 404）；Job 查询 GET /api/researches/{research_id}/jobs 与 GET /api/research-jobs/{job_id}；Alembic 0003；无关键词/搜索量/CPC 数据；无外部 API、无 Celery/Redis/队列）
 - P1-005 Research 创建页面（apps/web/app/researches/new/page.tsx 路由 /researches/new + apps/web/components/CreateResearchForm.tsx 客户端表单 + apps/web/lib/api.ts 最小 API client（NEXT_PUBLIC_API_BASE_URL 默认 http://localhost:8000，原生 fetch，无新依赖）；字段 Research Name（必填 ≤200）/ Seed Keyword（必填）/ Description（可选多行）/ Country（默认 US）/ Language（默认 en），status 不允许用户选择（后端默认 draft）；提交中按钮 Creating... + disabled 禁止重复提交；错误处理 422/409/500/网络失败均为安全提示；成功真实调用 POST /api/researches（201）后跳转 /researches/{research_id}；后端最小 CORS 仅允许 http://localhost:3000（apps/api/app/main.py + 新增 tests/test_cors.py 2 个测试）；首页导航新增 New Research 入口；pytest 112 passed；前端 typecheck / lint / build 通过；真实浏览器 E2E（Chrome headless + CDP）：打开 /researches/new → 填写表单 → Create Research → 真实 POST 201 → 跳转 /researches/{id}，数据库行验证后已清理；未修改数据库 schema、无新增 migration；未使用外部 API / 收费 API / Mock / 假数据；未提前实现 P1-006 / P1-007）
+- P1-006 Research 详情/进度页面（apps/web/app/researches/[researchId]/page.tsx 动态路由 + apps/web/components/ResearchDetail.tsx 客户端组件；真实调用 GET /api/researches/{id}、GET /api/researches/{id}/jobs；展示 Research Name / Seed Keyword / Description / Country / Language / Status / Created At / Updated At；Research 状态徽章 draft / running / completed / failed / cancelled；Jobs 列表展示 Job ID / Status（pending / running / completed / failed / cancelled）/ Started At / Finished At / Created At / 安全 error_message，与 Research 状态严格区分；Run Research 按钮仅 draft 显示，真实调用 POST /api/researches/{id}/run，成功后重新拉取 Research + Jobs（不猜测状态）；409 安全展示后端业务错误；loading / 404（Research not found + Back to Home / Create Research）/ 网络与 500 错误处理；lib/api.ts 扩展 getResearch / getResearchJobs / runResearch（原生 fetch）；pytest 112 passed；前端 typecheck / lint / build 通过；真实浏览器 E2E（Chrome headless + CDP）：创建 → 跳转详情 → 详情真实加载 → Run → 状态变为 completed + Job completed → 未知 UUID 404；测试数据已清理；未修改后端 / 数据库 schema / 无 migration；未使用 Mock / 假数据）
 
 ## 当前任务
 
-P1-006 Research 详情/进度页面（正式定义见 docs/TASKS.md）
+P1-007 Provider 基础接口（正式定义见 docs/TASKS.md）
 
 ## 下一步
 
-1. P1-006 Research 详情/进度页面
-2. P1-007 Provider 基础接口
-3. P1-008 真实 Suggestion Provider
-4. P1-009 真实 Trend Provider
-5. P1-010 Research Orchestrator
-6. P1-011 Provider 错误与降级
-7. P1-012 Research 结果展示
-8. P1-013 集成测试
-9. P1-014 E2E 测试
-10. P1-015 完成 Phase 1 验收
+1. P1-007 Provider 基础接口
+2. P1-008 真实 Suggestion Provider
+3. P1-009 真实 Trend Provider
+4. P1-010 Research Orchestrator
+5. P1-011 Provider 错误与降级
+6. P1-012 Research 结果展示
+7. P1-013 集成测试
+8. P1-014 E2E 测试
+9. P1-015 完成 Phase 1 验收
 
 ## 当前已知问题
 
@@ -88,6 +88,7 @@ P1-006 Research 详情/进度页面（正式定义见 docs/TASKS.md）
 - P1-003：Research 状态机完成（新增 app/services/research.py：ResearchStatus StrEnum + ALLOWED_TRANSITIONS + can_transition / validate_transition / InvalidStatusTransition + TERMINAL_STATES；PATCH /api/researches/{research_id} 的 status 严格经状态机校验：合法转换 200、非法转换 409（如 draft→completed、completed→running、cancelled→draft）、非法 status 值 422、同状态 no-op 200 且 updated_at 不变、非法转换后数据库状态保持不变；ResearchCreate / ResearchUpdate 的 status 改为 ResearchStatus 枚举；pytest 61 passed（新增 test_research_status.py 20 个 + test_research_api.py 7 个状态测试）；uvicorn 实机验证 200 / 409 / 422 / no-op 全通过；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}；alembic current/heads=0002，无 migration；前端 typecheck/lint/build 回归通过；未使用外部 API / 收费 API / Mock 数据库）
 - P1-004：Research Job 完成（新增 ResearchJob 模型 + app/services/research_job.py（ResearchJobStatus + ALLOWED_TRANSITIONS + create/start/complete/fail/cancel/get + run_research 同步执行：draft→Job pending→running→Research running→skeleton→Job completed→Research completed，异常时 Research/Job 均进入 failed 并记录安全 error_message）；新增 POST /api/researches/{research_id}/run（200/404/409）、GET /api/researches/{research_id}/jobs（created_at 倒序，空列表）、GET /api/research-jobs/{job_id}；Alembic 0003_create_research_jobs（upgrade/downgrade 0002/再 upgrade 全流程通过，final current/heads=0003）；pytest 110 passed（新增 test_research_job.py 49 个，含 5 合法 / 15 非法转换、终态、FK、CASCADE、run 成功/失败/404/409、list/detail API、无关键词数据验证；测试 fixtures 移入 conftest.py 共享）；uvicorn 实机 run 200 / 重复 run 409 / cancelled 409 / 不存在 404 / jobs list / job detail 全通过；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}；前端 typecheck/lint/build 回归通过；未生成任何关键词/搜索量/CPC/竞争度数据；未使用外部 API / 收费 API / Mock 数据库；未引入 Celery/Redis/队列；同步 docs/DATABASE.md research_job 定义与正式实现一致）
 - P1-005：Research 创建页面完成（新增 /researches/new 页面 + 创建表单 + lib/api.ts API client；真实调用 POST /api/researches → 201 → 跳转 /researches/{id}；CORS 仅允许 http://localhost:3000；pytest 112 passed（新增 test_cors 2 个）；前端 typecheck / lint / build 通过；Chrome headless 实机 E2E 全流程通过；测试数据已清理；无 migration / 无 schema 修改）
+- P1-006：Research 详情/进度页面完成（新增 /researches/[researchId] 动态路由 + ResearchDetail 组件；真实 GET /api/researches/{id} + GET /api/researches/{id}/jobs + POST /api/researches/{id}/run；状态徽章与 Job 列表、404 / loading / error 处理；pytest 112 passed；前端 typecheck / lint / build 通过；Chrome headless 实机 E2E：创建→跳转→加载→Run→completed→未知 UUID 404 全通过；测试数据已清理；无 migration / 无 schema 修改 / 后端未修改）
 
 ## 重要约束
 

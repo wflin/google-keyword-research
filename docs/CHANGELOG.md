@@ -117,6 +117,29 @@
 - 实机验证：GET /researches/new 200（含 Research Name / Seed Keyword / Description / Country / Language / Create Research 按钮）；OPTIONS 预检 200 + access-control-allow-origin: http://localhost:3000，未知 Origin 预检 400；POST /api/researches 201（Test Coffee Research / coffee → status draft）；浏览器表单提交后跳转 /researches/{research_id}；/health 与 /ready 保持 200
 - 数据库：验证后 research_project / research_job / keyword / research_keyword / keyword_metric_snapshot 均 count=0（无测试残留）
 
+### P1-006 — Research 详情/进度页面
+
+- 新增 Research 详情/进度页面（apps/web/app/researches/[researchId]/page.tsx 动态路由 + apps/web/components/ResearchDetail.tsx 客户端组件）：P1-005 创建成功后跳转 /researches/{research_id} 可直接打开
+- 真实 API：页面通过 GET /api/researches/{research_id} 加载 Research（name / seed_keyword / description / country_code / language_code / status / created_at / updated_at，时间转用户可读格式，不修改数据库时间）；通过 GET /api/researches/{research_id}/jobs 加载 Job 列表
+- Research 状态徽章：draft / running / completed / failed / cancelled（使用项目正式状态，标签 Draft / Running / Completed / Failed / Cancelled，颜色区分；不引入新状态）
+- Job 列表：展示 Job ID / Status（pending / running / completed / failed / cancelled，与 Research 状态严格区分）/ Started At / Finished At / Created At / error_message（仅安全业务信息，不展示 traceback / 连接串 / 密钥）
+- Run Research：仅 draft 状态显示按钮；真实调用 POST /api/researches/{research_id}/run（同步），提交中 "Running..." + disabled；成功后重新请求 Research + Jobs（不猜测状态，不 setStatus）；409 安全展示后端 detail；网络/500 通用提示
+- 状态处理：loading（"Loading research..."）、404（"Research not found" + Back to Home / Create Research）、网络错误（"Unable to connect to the API."）、500（"Failed to load research. Please try again."）、Retry
+- 扩展 API client（apps/web/lib/api.ts）：新增 getResearch / getResearchJobs / runResearch（原生 fetch，复用 ApiError，无新依赖）；未创建重复 API 层
+- 验证：pytest 112 passed（回归 Research API / Job / Health / Readiness，后端未修改）；前端 typecheck / lint / build 通过；真实浏览器 E2E（Chrome headless + CDP）：打开 /researches/new → 创建（201）→ 跳转 /researches/{id} → 详情真实加载（name / seed keyword / description / country / language / Draft / 时间）→ 点击 Run Research → 真实 POST /run → Research 变为 Completed、Job 列表出现 Completed Job → 未知 UUID 显示 Research not found；数据库验证后测试数据已清理
+- 未修改后端；未修改数据库 schema；未新增 migration；未使用外部 API / 收费 API / Mock / 假数据；未实现 Keyword / 搜索量 / CPC / 竞争度；未提前实现 P1-007
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-007（Provider 基础接口）。
+
+### Verification
+
+- 后端：pytest 112 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10 + test_research_api 17 + test_research_status 20 + test_research_job 49 + test_cors 2），真实 PostgreSQL；后端代码未修改
+- 前端：npm run typecheck / npm run lint / npm run build 全部通过；新增动态路由 /researches/[researchId]（ƒ Dynamic）
+- 实机验证（Chrome headless + CDP + 真实 FastAPI + 真实 Next.js + 真实 PostgreSQL）：/researches/new 创建（201）→ 浏览器跳转 /researches/{id} → 详情页真实加载 Research 与空 Jobs → Run Research → POST /run 200 → Research completed + Job completed（started_at / finished_at 落库）→ GET /api/researches/{id} 仍返回正确数据 → 未知 UUID 前端显示 Research not found（后端 404）
+- 数据库：验证后 research_project / research_job / keyword / research_keyword / keyword_metric_snapshot 均 count=0（无测试残留）
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构
