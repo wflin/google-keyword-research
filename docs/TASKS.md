@@ -27,7 +27,7 @@
 - [x] P1-004 Research Job
 - [x] P1-005 Research 创建页面
 - [x] P1-006 Research 详情/进度页面
-- [ ] P1-007 Provider 基础接口
+- [x] P1-007 Provider 基础接口
 - [ ] P1-008 真实 Suggestion Provider
 - [ ] P1-009 真实 Trend Provider
 - [ ] P1-010 Research Orchestrator

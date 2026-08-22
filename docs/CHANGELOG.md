@@ -140,6 +140,22 @@
 - 前端：npm run typecheck / npm run lint / npm run build 全部通过；新增动态路由 /researches/[researchId]（ƒ Dynamic）
 - 实机验证（Chrome headless + CDP + 真实 FastAPI + 真实 Next.js + 真实 PostgreSQL）：/researches/new 创建（201）→ 浏览器跳转 /researches/{id} → 详情页真实加载 Research 与空 Jobs → Run Research → POST /run 200 → Research completed + Job completed（started_at / finished_at 落库）→ GET /api/researches/{id} 仍返回正确数据 → 未知 UUID 前端显示 Research not found（后端 404）
 - 数据库：验证后 research_project / research_job / keyword / research_keyword / keyword_metric_snapshot 均 count=0（无测试残留）
+
+### P1-007 — Provider 基础接口
+
+- 新增 Provider 抽象层（apps/api/app/providers/：base.py / models.py / exceptions.py / __init__.py）：统一 Keyword Data Provider 契约，为未来接入真实 Provider 预留接口；Provider 层不依赖 FastAPI / SQLAlchemy / HTTP 路由 / 数据库
+- KeywordProvider（ABC）：name / version 标识 + discover_keywords(request) -> list[KeywordCandidate] + get_keyword_metrics(keywords, request) -> list[KeywordMetric]；未来新增 GoogleKeywordPlannerProvider 等真实 Provider 只需实现该接口，不修改 ResearchJob 核心逻辑
+- KeywordProviderRequest：seed_keyword（min_length=1 非空校验）/ country_code（默认 US）/ language_code（默认 en），与 Research API Schema 解耦
+- KeywordCandidate：keyword_text / normalized_keyword / source_type / provider
+- KeywordMetric：keyword_text + estimated_monthly_searches / cpc / currency / competition / competition_level / source / retrieved_at / provider_version / raw_payload；所有外部指标字段默认 None，禁止使用 0 或假默认值表示缺失数据
+- 异常体系：ProviderError(Exception) 基类 + ProviderNotConfiguredError / ProviderAuthenticationError / ProviderRateLimitError / ProviderRequestError / ProviderResponseError；异常 message 不包含 API Key / 密码 / DATABASE_URL / Authorization header
+- ProviderRegistry：轻量注册与获取（register / get，重复注册 ValueError / 未知名称 KeyError / 非 Provider TypeError），非 DI 容器
+- StubKeywordProvider：可实例化，discover_keywords / get_keyword_metrics 均返回空列表；不生成任何关键词、搜索量、CPC、竞争度数据
+- 未接入 Run API：POST /api/researches/{research_id}/run 的同步行为（draft → running → completed）完全不变；未新增 HTTP endpoint；未新增数据库表 / Alembic migration；未修改 Docker；未修改前端
+- 新增 tests/test_providers.py（16 个纯单元测试，无网络 / 无 Google API / 无 API Key / 无 PostgreSQL）：抽象类不可实例化、Stub 可实例化、request 正常创建、空 seed_keyword 拒绝、KeywordCandidate 创建、KeywordMetric 全部指标 None、空结果结构、异常体系与安全 message、Registry 注册 / 获取 / 重复 / 非 Provider、Provider 层不 import fastapi / sqlalchemy
+- 验证：pytest 128 passed（112 回归 + 16 新增）；前端 typecheck / lint / build 全部通过（无前端改动）；业务表 research_project / research_job / keyword / research_keyword / keyword_metric_snapshot 均 count=0
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构

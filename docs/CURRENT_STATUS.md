@@ -9,7 +9,7 @@ Phase 1 — Research
 
 ## 状态
 
-P1-006 已完成，等待执行 P1-007。
+P1-007 已完成，等待执行 P1-008。
 
 ## 已完成
 
@@ -44,22 +44,22 @@ P1-006 已完成，等待执行 P1-007。
 - P1-004 Research Job（ResearchJob 模型 research_job：research_id FK ON DELETE CASCADE + 索引 + timezone-aware UTC 时间；ResearchJobStatus：pending / running / completed / failed / cancelled，转换 pending→running、pending→cancelled、running→completed、running→failed、running→cancelled，终态 completed / failed / cancelled；同步 Run API POST /api/researches/{research_id}/run（draft→completed，重复/非 draft 409，不存在 404）；Job 查询 GET /api/researches/{research_id}/jobs 与 GET /api/research-jobs/{job_id}；Alembic 0003；无关键词/搜索量/CPC 数据；无外部 API、无 Celery/Redis/队列）
 - P1-005 Research 创建页面（apps/web/app/researches/new/page.tsx 路由 /researches/new + apps/web/components/CreateResearchForm.tsx 客户端表单 + apps/web/lib/api.ts 最小 API client（NEXT_PUBLIC_API_BASE_URL 默认 http://localhost:8000，原生 fetch，无新依赖）；字段 Research Name（必填 ≤200）/ Seed Keyword（必填）/ Description（可选多行）/ Country（默认 US）/ Language（默认 en），status 不允许用户选择（后端默认 draft）；提交中按钮 Creating... + disabled 禁止重复提交；错误处理 422/409/500/网络失败均为安全提示；成功真实调用 POST /api/researches（201）后跳转 /researches/{research_id}；后端最小 CORS 仅允许 http://localhost:3000（apps/api/app/main.py + 新增 tests/test_cors.py 2 个测试）；首页导航新增 New Research 入口；pytest 112 passed；前端 typecheck / lint / build 通过；真实浏览器 E2E（Chrome headless + CDP）：打开 /researches/new → 填写表单 → Create Research → 真实 POST 201 → 跳转 /researches/{id}，数据库行验证后已清理；未修改数据库 schema、无新增 migration；未使用外部 API / 收费 API / Mock / 假数据；未提前实现 P1-006 / P1-007）
 - P1-006 Research 详情/进度页面（apps/web/app/researches/[researchId]/page.tsx 动态路由 + apps/web/components/ResearchDetail.tsx 客户端组件；真实调用 GET /api/researches/{id}、GET /api/researches/{id}/jobs；展示 Research Name / Seed Keyword / Description / Country / Language / Status / Created At / Updated At；Research 状态徽章 draft / running / completed / failed / cancelled；Jobs 列表展示 Job ID / Status（pending / running / completed / failed / cancelled）/ Started At / Finished At / Created At / 安全 error_message，与 Research 状态严格区分；Run Research 按钮仅 draft 显示，真实调用 POST /api/researches/{id}/run，成功后重新拉取 Research + Jobs（不猜测状态）；409 安全展示后端业务错误；loading / 404（Research not found + Back to Home / Create Research）/ 网络与 500 错误处理；lib/api.ts 扩展 getResearch / getResearchJobs / runResearch（原生 fetch）；pytest 112 passed；前端 typecheck / lint / build 通过；真实浏览器 E2E（Chrome headless + CDP）：创建 → 跳转详情 → 详情真实加载 → Run → 状态变为 completed + Job completed → 未知 UUID 404；测试数据已清理；未修改后端 / 数据库 schema / 无 migration；未使用 Mock / 假数据）
+- P1-007 Provider 基础接口（新增 apps/api/app/providers/：base.py / models.py / exceptions.py / __init__.py；KeywordProvider ABC（name / version + discover_keywords / get_keyword_metrics）；KeywordProviderRequest（seed_keyword 非空，country_code / language_code 沿用 US / en）；KeywordCandidate（keyword_text / normalized_keyword / source_type / provider）；KeywordMetric（estimated_monthly_searches / cpc / currency / competition / competition_level / source / retrieved_at / provider_version / raw_payload 全部默认 None，不伪造搜索量 / CPC / 竞争度）；ProviderError 异常体系（ProviderNotConfiguredError / ProviderAuthenticationError / ProviderRateLimitError / ProviderRequestError / ProviderResponseError，message 不泄露密钥 / 连接信息）；ProviderRegistry 轻量注册与获取；StubKeywordProvider 仅返回空列表，不产生任何数据；Provider 层不依赖 FastAPI / SQLAlchemy / 数据库，不新增 HTTP endpoint；pytest 128 passed（新增 tests/test_providers.py 16 个纯单元测试，无网络 / 无 Google API / 无 PostgreSQL）；前端 typecheck / lint / build 回归通过（未修改前端）；业务表 count=0；未调用 Google API / 外部 / 收费 API；当前没有真实 Provider；未接入 Run API，P1-004 行为不变）
 
 ## 当前任务
 
-P1-007 Provider 基础接口（正式定义见 docs/TASKS.md）
+P1-008 真实 Suggestion Provider（正式定义见 docs/TASKS.md）
 
 ## 下一步
 
-1. P1-007 Provider 基础接口
-2. P1-008 真实 Suggestion Provider
-3. P1-009 真实 Trend Provider
-4. P1-010 Research Orchestrator
-5. P1-011 Provider 错误与降级
-6. P1-012 Research 结果展示
-7. P1-013 集成测试
-8. P1-014 E2E 测试
-9. P1-015 完成 Phase 1 验收
+1. P1-008 真实 Suggestion Provider
+2. P1-009 真实 Trend Provider
+3. P1-010 Research Orchestrator
+4. P1-011 Provider 错误与降级
+5. P1-012 Research 结果展示
+6. P1-013 集成测试
+7. P1-014 E2E 测试
+8. P1-015 完成 Phase 1 验收
 
 ## 当前已知问题
 
