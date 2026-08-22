@@ -16,6 +16,11 @@ from app.schemas.research import (
     ResearchResponse,
     ResearchUpdate,
 )
+from app.services.research import (
+    InvalidStatusTransition,
+    ResearchStatus,
+    validate_transition,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +89,42 @@ def update_research(
     payload: ResearchUpdate,
     db: Session = Depends(get_db),
 ) -> ResearchProject:
-    """Update the editable fields of a research project."""
+    """Update the editable fields of a research project.
+
+    Status changes go through the research state machine; illegal transitions
+    return 409 Conflict and leave the stored status untouched.
+    """
     research = db.get(ResearchProject, research_id)
     if research is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Research not found",
         )
-    for field, value in payload.model_dump(exclude_unset=True).items():
+
+    data = payload.model_dump(exclude_unset=True)
+    new_status = data.pop("status", None)
+    if new_status is not None:
+        try:
+            current_status = ResearchStatus(research.status)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Current research status is invalid",
+            ) from None
+        if new_status != current_status:
+            try:
+                validate_transition(current_status, new_status)
+            except InvalidStatusTransition:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"Cannot transition research status from "
+                        f"{current_status.value} to {new_status.value}"
+                    ),
+                ) from None
+            research.status = new_status.value
+
+    for field, value in data.items():
         setattr(research, field, value)
     try:
         db.commit()

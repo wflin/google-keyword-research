@@ -89,7 +89,7 @@ def test_create_research_with_all_fields(client: TestClient) -> None:
         description="English resume builder demand",
         country_code="GB",
         language_code="en",
-        status="queued",
+        status="running",
     )
     response = client.post(API_PREFIX, json=payload)
     assert response.status_code == 201
@@ -99,7 +99,7 @@ def test_create_research_with_all_fields(client: TestClient) -> None:
     assert body["description"] == "English resume builder demand"
     assert body["country_code"] == "GB"
     assert body["language_code"] == "en"
-    assert body["status"] == "queued"
+    assert body["status"] == "running"
 
 
 def test_list_researches_returns_items_newest_first(client: TestClient) -> None:
@@ -191,3 +191,114 @@ def test_created_research_is_queryable_in_postgres(
     assert stored.status == "draft"
     assert stored.created_at is not None
     assert stored.updated_at is not None
+
+
+def transition_research(
+    client: TestClient,
+    research_id: str,
+    *statuses: str,
+) -> None:
+    """Move a research through a chain of legal status transitions."""
+    for target in statuses:
+        response = client.patch(
+            f"{API_PREFIX}/{research_id}",
+            json={"status": target},
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == target
+
+
+def test_patch_status_legal_transition_returns_200(client: TestClient) -> None:
+    created = create_research(client)
+    response = client.patch(
+        f"{API_PREFIX}/{created['id']}",
+        json={"status": "running"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "running"
+
+
+def test_patch_status_illegal_transition_returns_409_and_preserves_state(
+    client: TestClient,
+    db: Session,
+) -> None:
+    created = create_research(client)
+    research_id = uuid.UUID(created["id"])
+
+    response = client.patch(
+        f"{API_PREFIX}/{research_id}",
+        json={"status": "completed"},
+    )
+    assert response.status_code == 409
+
+    stored = db.get(ResearchProject, research_id)
+    assert stored is not None
+    assert stored.status == "draft"
+
+
+def test_patch_status_invalid_value_returns_422(client: TestClient) -> None:
+    created = create_research(client)
+    response = client.patch(
+        f"{API_PREFIX}/{created['id']}",
+        json={"status": "bogus"},
+    )
+    assert response.status_code == 422
+
+
+def test_patch_status_same_value_is_noop(
+    client: TestClient,
+    db: Session,
+) -> None:
+    created = create_research(client)
+    research_id = uuid.UUID(created["id"])
+
+    response = client.patch(
+        f"{API_PREFIX}/{research_id}",
+        json={"status": "draft"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "draft"
+    assert body["updated_at"] == created["updated_at"]
+    assert db.get(ResearchProject, research_id).status == "draft"
+
+
+def test_patch_status_updates_updated_at(client: TestClient) -> None:
+    created = create_research(client)
+    before = parse_datetime(created["updated_at"])
+    time.sleep(0.01)
+
+    response = client.patch(
+        f"{API_PREFIX}/{created['id']}",
+        json={"status": "running"},
+    )
+    assert response.status_code == 200
+    assert parse_datetime(response.json()["updated_at"]) > before
+
+
+def test_full_legal_transition_chain(client: TestClient) -> None:
+    created = create_research(client)
+    transition_research(client, created["id"], "running", "completed")
+
+    body = client.get(f"{API_PREFIX}/{created['id']}").json()
+    assert body["status"] == "completed"
+
+
+def test_terminal_states_are_terminal(client: TestClient) -> None:
+    terminal_cases = [
+        ("completed", "running"),
+        ("failed", "completed"),
+        ("cancelled", "draft"),
+    ]
+    for terminal_status, forbidden_target in terminal_cases:
+        created = create_research(client)
+        transition_research(client, created["id"], "running", terminal_status)
+
+        response = client.patch(
+            f"{API_PREFIX}/{created['id']}",
+            json={"status": forbidden_target},
+        )
+        assert response.status_code == 409
+
+        body = client.get(f"{API_PREFIX}/{created['id']}").json()
+        assert body["status"] == terminal_status

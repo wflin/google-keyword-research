@@ -32,6 +32,34 @@
 - 实机验证：POST 201 / GET list 200 / GET single 200 / PATCH 200 / DELETE 204 / 删除后 GET 404；/health 与 /ready 均 200
 - 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
 
+### P1-003 — Research 状态机
+
+- 新增状态机服务（apps/api/app/services/research.py）：ResearchStatus StrEnum（draft / running / completed / failed / cancelled）+ ALLOWED_TRANSITIONS + TERMINAL_STATES + can_transition / validate_transition / InvalidStatusTransition；不依赖 FastAPI / Session / HTTP，可供后续 Service / Job 复用
+- 合法转换：draft→running、draft→cancelled、running→completed、running→failed、running→cancelled；终态：completed / failed / cancelled（不可再转换）
+- PATCH /api/researches/{research_id} 的 status 严格经状态机校验：
+  - 合法转换 → 200，updated_at 服务端更新
+  - 非法转换 → 409 Conflict（如 draft→completed、completed→running、cancelled→draft），数据库状态保持不变
+  - 非法 status 值 → 422
+  - 同状态（如 draft→draft）→ 200 no-op，updated_at 不变
+- ResearchCreate / ResearchUpdate 的 status 字段改为 ResearchStatus 枚举；正式状态集移除历史 “queued”，Model 注释与 docs/DATABASE.md 状态列表同步更新；数据库 schema 不变，无新增 migration
+- P1-002 全字段创建测试中 status 由 “queued” 调整为正式状态 “running”
+- 新增 tests/test_research_status.py（20 个状态机测试：5 合法 / 10 非法 / 自转换拒绝 / 终态 / 规则覆盖 / 字符串兼容）+ test_research_api.py 新增 7 个状态 API 测试（200 / 409 / 422 / no-op / updated_at / 终态 / DB 状态保持）
+- 验证：pytest 61 passed（真实 PostgreSQL）；uvicorn 实机验证合法转换 200、非法转换 409、非法值 422、no-op 200；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}；alembic current/heads=0002，无新增 migration
+- 未使用外部 API；未使用收费 API；未使用 Mock 数据库；未修改前端、Docker、数据库 schema；未提前实现 P1-004
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-004（Research Job）。
+
+### Verification
+
+- pytest：61 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10 + test_research_api 17 + test_research_status 20），真实 PostgreSQL
+- Alembic：current=0002 (head)、heads=0002，未新增 migration
+- 数据库：4 张业务表存在且验证后各表 count=0（无残留数据）
+- 实机验证：draft→running→completed 200、completed→running 409、draft→completed 409、cancelled→draft 409、bogus 422、draft→draft 200 no-op；/health 与 /ready 均 200
+- 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
+
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构

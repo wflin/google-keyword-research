@@ -33,7 +33,7 @@ PostgreSQL 是 V1 主数据库。数据库必须支持：
 - created_at TIMESTAMPTZ NOT NULL
 - updated_at TIMESTAMPTZ NOT NULL
 
-status：draft / queued / running / completed / failed / cancelled
+status：draft / running / completed / failed / cancelled
 
 ## 3. keyword
 

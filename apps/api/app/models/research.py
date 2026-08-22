@@ -29,7 +29,8 @@ class ResearchProject(Base, UUIDPrimaryKeyMixin):
     language_code: Mapped[str] = mapped_column(
         String(20), nullable=False, default="en"
     )
-    # Allowed values: draft / queued / running / completed / failed / cancelled.
+    # Allowed values: draft / running / completed / failed / cancelled
+    # (formal state machine: app/services/research.py).
     # Python-side defaults keep the model and API schemas consistent.
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft")
     created_at: Mapped[datetime] = mapped_column(

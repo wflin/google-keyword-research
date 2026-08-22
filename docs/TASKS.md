@@ -23,7 +23,7 @@
 
 - [x] P1-001 Research 数据模型
 - [x] P1-002 Research CRUD API
-- [ ] P1-003 Research 状态机
+- [x] P1-003 Research 状态机
 - [ ] P1-004 Research Job
 - [ ] P1-005 Research 创建页面
 - [ ] P1-006 Research 详情/进度页面

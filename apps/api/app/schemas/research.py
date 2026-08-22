@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.services.research import ResearchStatus
+
 
 class ResearchCreate(BaseModel):
     """Payload for creating a research project.
@@ -18,7 +20,7 @@ class ResearchCreate(BaseModel):
     description: str | None = None
     country_code: str = "US"
     language_code: str = "en"
-    status: str = "draft"
+    status: ResearchStatus = ResearchStatus.DRAFT
 
 
 class ResearchUpdate(BaseModel):
@@ -29,7 +31,7 @@ class ResearchUpdate(BaseModel):
     description: str | None = None
     country_code: str | None = None
     language_code: str | None = None
-    status: str | None = None
+    status: ResearchStatus | None = None
 
 
 class ResearchResponse(BaseModel):
