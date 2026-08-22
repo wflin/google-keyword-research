@@ -9,17 +9,23 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.dependencies import get_db
-from app.models import ResearchProject
+from app.models import ResearchJob, ResearchProject
 from app.schemas.research import (
     ResearchCreate,
     ResearchListResponse,
     ResearchResponse,
     ResearchUpdate,
 )
+from app.schemas.research_job import ResearchJobListResponse, ResearchJobResponse
 from app.services.research import (
     InvalidStatusTransition,
     ResearchStatus,
     validate_transition,
+)
+from app.services.research_job import (
+    ResearchNotFound,
+    ResearchNotRunnable,
+    run_research,
 )
 
 logger = logging.getLogger(__name__)
@@ -154,3 +160,49 @@ def delete_research(
         db.rollback()
         _handle_database_error("delete")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{research_id}/run", response_model=ResearchJobResponse)
+def run_research_endpoint(
+    research_id: UUID,
+    db: Session = Depends(get_db),
+) -> ResearchJob:
+    """Start a research synchronously and return its finished job."""
+    try:
+        return run_research(db, research_id)
+    except ResearchNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Research not found",
+        ) from None
+    except ResearchNotRunnable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from None
+    except Exception:
+        logger.exception("Failed to run research %s", research_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to run research",
+        ) from None
+
+
+@router.get("/{research_id}/jobs", response_model=ResearchJobListResponse)
+def list_research_jobs(
+    research_id: UUID,
+    db: Session = Depends(get_db),
+) -> ResearchJobListResponse:
+    """List the jobs of a research, newest first."""
+    research = db.get(ResearchProject, research_id)
+    if research is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Research not found",
+        )
+    jobs = db.scalars(
+        select(ResearchJob)
+        .where(ResearchJob.research_id == research_id)
+        .order_by(ResearchJob.created_at.desc())
+    ).all()
+    return ResearchJobListResponse(items=list(jobs))

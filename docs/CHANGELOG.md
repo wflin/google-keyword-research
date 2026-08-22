@@ -60,6 +60,35 @@
 - 实机验证：draft→running→completed 200、completed→running 409、draft→completed 409、cancelled→draft 409、bogus 422、draft→draft 200 no-op；/health 与 /ready 均 200
 - 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
 
+### P1-004 — Research Job
+
+- 新增 ResearchJob 模型（apps/api/app/models/research.py）：research_job 表，id UUID PK、research_id FK → research_project.id（ON DELETE CASCADE + 索引）、status、started_at、finished_at、error_message、created_at、updated_at；所有时间字段 timezone-aware UTC
+- 新增 Job 状态机与生命周期服务（apps/api/app/services/research_job.py）：
+  - ResearchJobStatus：pending / running / completed / failed / cancelled（与 ResearchStatus 分离，不混用）
+  - 合法转换：pending→running、pending→cancelled、running→completed、running→failed、running→cancelled；终态 completed / failed / cancelled
+  - pending→pending、running→running 允许 no-op；终态（含同状态）拒绝转换
+  - create_job / start_job / complete_job / fail_job / cancel_job / get_job / run_research；不依赖 FastAPI / HTTP，接收 db session + research id
+- 新增 Run API：POST /api/researches/{research_id}/run（同步执行）：Research 不存在 404；非 draft（running / completed / failed / cancelled）重复 run 409 且不创建 Job；成功流程 draft → Job pending → Job running → Research running → skeleton（无 Provider 数据）→ Job completed → Research completed，返回 200 + ResearchJobResponse；执行异常时 Research 与 Job 均进入 failed 并记录安全 error_message（不保存 traceback）
+- 新增 Job 查询 API：GET /api/researches/{research_id}/jobs（created_at 倒序，无 Job 返回空 items，Research 不存在 404）；GET /api/research-jobs/{job_id}（不存在 404）
+- 新增 Pydantic Schema（apps/api/app/schemas/research_job.py）：ResearchJobResponse / ResearchJobListResponse（from_attributes，不直接暴露 ORM 对象）
+- 新增 Alembic migration 0003_create_research_jobs（revision=0003，upgrade 建表 + 索引，downgrade 删除）；真实执行 upgrade head → downgrade 0002 → 再 upgrade head 全流程通过；final current=0003 (head)、heads=0003
+- 测试 fixtures（db / client）移入共享 apps/api/tests/conftest.py；新增 tests/test_research_job.py（49 个真实 PostgreSQL 测试）：5 合法 / 15 非法转换、同状态 no-op、终态拒绝、Job 默认 pending、start/complete/fail/cancel、非法转换拒绝、FK 校验、Research 删除 CASCADE、timezone-aware、run 成功 / 失败双 failed / 404 / 409（running/completed/failed/cancelled）、jobs list 倒序 / 空列表 / 404、job detail / 404、run 后 Keyword / ResearchKeyword / KeywordMetricSnapshot 零数据；更新 test_alembic.py 期望 head 0003
+- 验证：pytest 110 passed（真实 PostgreSQL）；uvicorn 实机 run 200 / 重复 run 409 / cancelled 409 / 不存在 404 / jobs list / job detail 全通过；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}
+- 未生成任何虚假关键词 / 搜索量 / CPC / 竞争度数据；未使用外部 API / 收费 API / Mock 数据库；未引入 Celery / Redis / 消息队列 / 后台 worker
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-005（Research 创建页面）。
+
+### Verification
+
+- pytest：110 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10 + test_research_api 17 + test_research_status 20 + test_research_job 49），真实 PostgreSQL
+- Alembic：0003_create_research_jobs；upgrade head / downgrade 0002（research_job 删除）/ 再 upgrade head（research_job 恢复）全流程通过；final current=0003 (head)、heads=0003
+- 数据库：5 张业务表存在且验证后各表 count=0（无残留数据）
+- 实机验证：POST /run 200（job completed + research completed）、重复 run 409、cancelled research run 409、不存在 research run 404、jobs list 200（1 个 job）、job detail 200；/health 与 /ready 均 200
+- 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
+
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构

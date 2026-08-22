@@ -7,16 +7,11 @@ rolled back after each test, so the development database stays clean.
 
 import time
 import uuid
-from collections.abc import Generator
 from datetime import datetime
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.db.dependencies import get_db
-from app.db.session import engine
-from app.main import app
 from app.models import ResearchProject
 
 API_PREFIX = "/api/researches"
@@ -24,32 +19,6 @@ API_PREFIX = "/api/researches"
 
 def parse_datetime(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-@pytest.fixture
-def db() -> Generator[Session, None, None]:
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection, join_transaction_mode="create_savepoint")
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
-
-
-@pytest.fixture
-def client(db: Session) -> Generator[TestClient, None, None]:
-    def override_get_db() -> Generator[Session, None, None]:
-        yield db
-
-    app.dependency_overrides[get_db] = override_get_db
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.clear()
 
 
 def create_payload(**overrides: str) -> dict[str, str]:

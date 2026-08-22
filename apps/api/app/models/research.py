@@ -1,12 +1,13 @@
-"""Research data model: one keyword research task/project.
+"""Research and research job data models.
 
-Follows docs/DATABASE.md (research_project).
+Follows docs/DATABASE.md (research_project / research_job).
 """
 
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UUIDPrimaryKeyMixin, utcnow
@@ -42,4 +43,36 @@ class ResearchProject(Base, UUIDPrimaryKeyMixin):
 
     research_keywords: Mapped[list["ResearchKeyword"]] = relationship(
         back_populates="research", cascade="all, delete-orphan"
+    )
+    research_jobs: Mapped[list["ResearchJob"]] = relationship(
+        back_populates="research", cascade="all, delete-orphan"
+    )
+
+
+class ResearchJob(Base, UUIDPrimaryKeyMixin):
+    """A single execution job for a research project."""
+
+    __tablename__ = "research_job"
+
+    research_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("research_project.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # Allowed values: pending / running / completed / failed / cancelled
+    # (formal state machine: app/services/research_job.py).
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow
+    )
+
+    research: Mapped["ResearchProject"] = relationship(
+        back_populates="research_jobs"
     )
