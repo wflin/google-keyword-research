@@ -22,7 +22,7 @@
 ## Phase 1 — Research 工作台
 
 - [x] P1-001 Research 数据模型
-- [ ] P1-002 Research CRUD API
+- [x] P1-002 Research CRUD API
 - [ ] P1-003 Research 状态机
 - [ ] P1-004 Research Job
 - [ ] P1-005 Research 创建页面

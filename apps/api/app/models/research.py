@@ -23,10 +23,15 @@ class ResearchProject(Base, UUIDPrimaryKeyMixin):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     seed_keyword: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
-    country_code: Mapped[str] = mapped_column(String(10), nullable=False)
-    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
-    # Allowed values: draft / queued / running / completed / failed / cancelled
-    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    country_code: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="US"
+    )
+    language_code: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="en"
+    )
+    # Allowed values: draft / queued / running / completed / failed / cancelled.
+    # Python-side defaults keep the model and API schemas consistent.
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utcnow
     )

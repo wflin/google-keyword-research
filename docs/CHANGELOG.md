@@ -2,6 +2,36 @@
 
 > 记录每次开发会话完成了什么。不得删除历史记录。
 
+## 2026-08-22
+
+### P1-002 — Research CRUD API
+
+- 新增 Pydantic API Schema（apps/api/app/schemas/research.py）：ResearchCreate / ResearchUpdate / ResearchResponse / ResearchListResponse；区分创建、更新与响应，不直接暴露 SQLAlchemy Model
+- 新增 Research CRUD Router（apps/api/app/api/research.py）并在 app/main.py 以 /api 前缀注册：
+  - POST /api/researches（201，创建后返回完整 ResearchProject）
+  - GET /api/researches（200，items 列表，按 created_at 倒序）
+  - GET /api/researches/{research_id}（200 / 404）
+  - PATCH /api/researches/{research_id}（200 / 404，仅允许业务字段，updated_at 由服务端更新）
+  - DELETE /api/researches/{research_id}（204 / 404，无响应体）
+- 404 返回稳定 JSON 错误结构；数据库异常 rollback 并返回通用 500，不泄露 SQL / 连接信息 / 密码
+- ResearchProject Model 增加 Python 侧默认值（country_code=US / language_code=en / status=draft），与 API Schema 默认值一致；不修改数据库 schema，无新增 migration，未修改已有 migration
+- 新增 tests/test_research_api.py（10 个真实 PostgreSQL CRUD 测试）：最小创建、全字段创建、列表倒序、单个查询、404、PATCH 更新与 updated_at、DELETE 与删除后 404、SQLAlchemy 落库验证；使用 savepoint 事务回滚，测试结束后无残留数据
+- 验证：pytest 34 passed（真实 PostgreSQL）；uvicorn 实机启动后 POST/GET/PATCH/DELETE 全流程 CRUD 通过；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}；/openapi.json 包含全部 5 个 endpoint
+- 未使用外部 API；未使用收费 API；未使用 Mock 数据库；未创建 Keyword / ResearchKeyword / KeywordMetricSnapshot；未修改前端、Docker、Alembic migration、数据库 schema
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-003（Research 状态机）。
+
+### Verification
+
+- pytest：34 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10 + test_research_api 10），真实 PostgreSQL
+- Alembic：current=0002 (head)、heads=0002，未新增 migration
+- 数据库：4 张业务表存在且验证后各表 count=0（无残留数据）
+- 实机验证：POST 201 / GET list 200 / GET single 200 / PATCH 200 / DELETE 204 / 删除后 GET 404；/health 与 /ready 均 200
+- 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
+
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构
