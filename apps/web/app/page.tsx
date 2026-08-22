@@ -93,6 +93,9 @@ export default function Home() {
             <Link className="nav-link" href="/">
               Home
             </Link>
+            <Link className="nav-link" href="/researches/new">
+              New Research
+            </Link>
           </nav>
         </div>
       </header>

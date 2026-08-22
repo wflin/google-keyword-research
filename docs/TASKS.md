@@ -25,7 +25,7 @@
 - [x] P1-002 Research CRUD API
 - [x] P1-003 Research 状态机
 - [x] P1-004 Research Job
-- [ ] P1-005 Research 创建页面
+- [x] P1-005 Research 创建页面
 - [ ] P1-006 Research 详情/进度页面
 - [ ] P1-007 Provider 基础接口
 - [ ] P1-008 真实 Suggestion Provider

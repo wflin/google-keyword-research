@@ -90,6 +90,33 @@
 - 实机验证：POST /run 200（job completed + research completed）、重复 run 409、cancelled research run 409、不存在 research run 404、jobs list 200（1 个 job）、job detail 200；/health 与 /ready 均 200
 - 前端回归：npm run typecheck / npm run lint / npm run build 全部通过
 
+### P1-005 — Research 创建页面
+
+- 新增 Research 创建页面（apps/web/app/researches/new/page.tsx，路由 /researches/new，App Router）：页面标题 Create Research Project + Header / Footer（沿用 P0-009 首页视觉风格与 globals.css 变量，无新 UI 框架）
+- 新增创建表单客户端组件（apps/web/components/CreateResearchForm.tsx，"use client"）：
+  - 字段：Research Name（必填，≤200 字符）、Seed Keyword（必填）、Description（可选多行）、Country（默认 US）、Language（默认 en）；Country / Language 使用小型静态选项；status 不允许用户选择（由后端默认 draft）
+  - 校验：空值 / 超长不提交并显示字段错误；提交中按钮显示 "Creating..." 且 disabled，禁止重复提交
+  - 错误处理：422 显示后端校验提示、500 → "Failed to create research. Please try again."、网络失败 → "Unable to connect to the API."；可安全展示后端 detail，不暴露内部异常
+  - 成功：调用真实 POST /api/researches → 201，获取 research_id 后 router.push("/researches/{id}")，不提前实现 P1-006 详情页
+- 新增最小 API client（apps/web/lib/api.ts）：API_BASE_URL 支持 NEXT_PUBLIC_API_BASE_URL（默认 http://localhost:8000），原生 fetch，无新依赖，集中 ApiError 类型
+- 后端最小 CORS 配置（apps/api/app/main.py）：仅允许 http://localhost:3000（精确 allow_origins，未使用 "*"），allow_methods GET/POST/PATCH/DELETE/OPTIONS、allow_headers Content-Type；不改变现有 API 行为
+- 首页导航（apps/web/app/page.tsx）新增 New Research 入口
+- 新增后端 CORS 测试（apps/api/tests/test_cors.py，2 个）：localhost:3000 预检 200 + allow-origin；未知 Origin 预检 400 且无 allow-origin
+- 验证：pytest 112 passed（新增 2 个 CORS 测试）；前端 typecheck / lint / build 全部通过；真实浏览器 E2E（Chrome headless + CDP）：打开 /researches/new → 填写表单（Test Coffee Research / coffee / US / en）→ 点击 Create Research → 浏览器真实调用 POST /api/researches（201）→ 跳转 /researches/{id}；数据库真实产生 ResearchProject（status=draft），验证后测试数据已清理
+- 未修改数据库 schema；未新增 migration；未使用外部 API / 收费 API / Mock / 假关键词 / 假搜索量 / 假 CPC；未引入新依赖；未提前实现 P1-006 / P1-007
+- 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
+
+### Next
+
+执行 Phase 1 / P1-006（Research 详情/进度页面）。
+
+### Verification
+
+- 后端：pytest 112 passed（test_health 3 + test_database 5 + test_alembic 4 + test_readiness 2 + test_models 10 + test_research_api 17 + test_research_status 20 + test_research_job 49 + test_cors 2），真实 PostgreSQL
+- 前端：npm run typecheck / npm run lint / npm run build 全部通过；路由 /researches/new 已生成
+- 实机验证：GET /researches/new 200（含 Research Name / Seed Keyword / Description / Country / Language / Create Research 按钮）；OPTIONS 预检 200 + access-control-allow-origin: http://localhost:3000，未知 Origin 预检 400；POST /api/researches 201（Test Coffee Research / coffee → status draft）；浏览器表单提交后跳转 /researches/{research_id}；/health 与 /ready 保持 200
+- 数据库：验证后 research_project / research_job / keyword / research_keyword / keyword_metric_snapshot 均 count=0（无测试残留）
+
 ## 2026-08-21
 
 ### P0-001 — 创建 monorepo 目录结构
