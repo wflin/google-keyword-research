@@ -224,17 +224,20 @@ AI 报告不能替代原始事实数据。
 
 ## 15. research_job
 
-异步任务。
+Research 执行记录（Job 生命周期，与 research_project 状态独立）。
 
 - id UUID PK
-- research_id UUID FK
-- job_type VARCHAR(50)
-- status VARCHAR(30)
-- progress INTEGER
-- error_code VARCHAR(100)
-- error_message TEXT
+- research_id UUID FK（research_project.id，ON DELETE CASCADE，已建索引）
+- status VARCHAR(30) NOT NULL
 - started_at TIMESTAMPTZ
 - finished_at TIMESTAMPTZ
+- error_message TEXT
+- created_at TIMESTAMPTZ NOT NULL
+- updated_at TIMESTAMPTZ NOT NULL
+
+status：pending / running / completed / failed / cancelled
+
+所有时间字段保持 timezone-aware UTC。
 
 ## 16. provider_run
 

@@ -75,6 +75,7 @@
 - 测试 fixtures（db / client）移入共享 apps/api/tests/conftest.py；新增 tests/test_research_job.py（49 个真实 PostgreSQL 测试）：5 合法 / 15 非法转换、同状态 no-op、终态拒绝、Job 默认 pending、start/complete/fail/cancel、非法转换拒绝、FK 校验、Research 删除 CASCADE、timezone-aware、run 成功 / 失败双 failed / 404 / 409（running/completed/failed/cancelled）、jobs list 倒序 / 空列表 / 404、job detail / 404、run 后 Keyword / ResearchKeyword / KeywordMetricSnapshot 零数据；更新 test_alembic.py 期望 head 0003
 - 验证：pytest 110 passed（真实 PostgreSQL）；uvicorn 实机 run 200 / 重复 run 409 / cancelled 409 / 不存在 404 / jobs list / job detail 全通过；/health=200 {"status":"ok"}、/ready=200 {"status":"ready"}
 - 未生成任何虚假关键词 / 搜索量 / CPC / 竞争度数据；未使用外部 API / 收费 API / Mock 数据库；未引入 Celery / Redis / 消息队列 / 后台 worker
+- 同步 docs/DATABASE.md research_job 定义与正式实现一致（字段 / 状态值 / ON DELETE CASCADE / timezone-aware UTC）
 - 更新 CURRENT_STATUS.md、TASKS.md、CHANGELOG.md
 
 ### Next
